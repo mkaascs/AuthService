@@ -1,20 +1,16 @@
 package commands
 
-type Base struct {
-	Login    string
-	Password string
-	ClientID string
-}
-
 type Register struct {
-	Base
+	Login    string
+	Email    string
+	Password string
 }
 
 type Login struct {
-	Base
+	Login    string
+	Password string
 }
 
 type Refresh struct {
 	RefreshToken string
-	ClientID     string
 }

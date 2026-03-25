@@ -7,9 +7,11 @@ type Register struct {
 }
 
 type Login struct {
-	Tokens entities.TokenPair
+	Tokens    entities.TokenPair
+	ExpiresIn int64
 }
 
 type Refresh struct {
-	Tokens entities.TokenPair
+	Tokens    entities.TokenPair
+	ExpiresIn int64
 }
