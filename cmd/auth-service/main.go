@@ -1,12 +1,12 @@
 package main
 
 import (
+	"auth-service/internal/app"
+	"auth-service/internal/config"
+	myLog "auth-service/internal/lib/log"
 	"log/slog"
 	"os"
 	"os/signal"
-	"sso-service/internal/app"
-	"sso-service/internal/config"
-	myLog "sso-service/internal/lib/log"
 	"syscall"
 )
 
@@ -14,7 +14,7 @@ func main() {
 	cfg := config.MustLoad()
 	logger := myLog.MustLoad(cfg.Env)
 
-	logger.Info("application sso-service is starting",
+	logger.Info("application auth-service is starting",
 		slog.String("env", cfg.Env))
 
 	application := app.New(*cfg, logger)
@@ -30,5 +30,5 @@ func main() {
 	application.GRPC.Stop()
 	_ = application.MySql.Close()
 
-	logger.Info("application sso-service stopped")
+	logger.Info("application auth-service stopped")
 }

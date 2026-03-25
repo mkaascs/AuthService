@@ -15,7 +15,7 @@ type Config struct {
 	Env              string `yaml:"environment" env-default:"local"`
 	ConnectionString string `yaml:"connection_string" env-required:"true"`
 	GrpcConfig       `yaml:"grpc"`
-	SsoConfig        `yaml:"sso"`
+	AuthConfig       `yaml:"auth"`
 }
 
 type GrpcConfig struct {
@@ -23,8 +23,8 @@ type GrpcConfig struct {
 	Timeout time.Duration `yaml:"timeout" env-default:"5s"`
 }
 
-type SsoConfig struct {
-	Issuer          string        `yaml:"issuer" env-default:"sso-service"`
+type AuthConfig struct {
+	Issuer          string        `yaml:"issuer" env-default:"auth-service"`
 	AccessTokenTTL  time.Duration `yaml:"access_token_ttl" env-default:"15m"`
 	RefreshTokenTTL time.Duration `yaml:"refresh_token_ttl" env-default:"720h"`
 }

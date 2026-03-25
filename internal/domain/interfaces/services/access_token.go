@@ -1,8 +1,8 @@
 package services
 
 import (
-	"sso-service/internal/domain/dto/tokens/commands"
-	"sso-service/internal/domain/dto/tokens/results"
+	"auth-service/internal/domain/dto/tokens/commands"
+	"auth-service/internal/domain/dto/tokens/results"
 )
 
 type AccessToken interface {

@@ -1,12 +1,12 @@
 package grpc
 
 import (
+	sloglib "auth-service/internal/lib/log/slog"
 	"fmt"
 	"google.golang.org/grpc"
 	"log/slog"
 	"net"
 	"os"
-	sloglib "sso-service/internal/lib/log/slog"
 )
 
 type App struct {

@@ -1,6 +1,6 @@
 package results
 
-import "sso-service/internal/domain/entities"
+import "auth-service/internal/domain/entities"
 
 type Register struct {
 	UserID int64

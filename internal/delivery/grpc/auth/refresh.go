@@ -1,16 +1,16 @@
 package auth
 
 import (
+	"auth-service/internal/domain/dto/auth/commands"
+	authErrors "auth-service/internal/domain/entities/errors"
 	"context"
 	"errors"
-	ssov1 "github.com/mkaascs/SsoProto/gen/go/sso"
+	authv1 "github.com/mkaascs/AuthProto/gen/go/auth"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"sso-service/internal/domain/dto/auth/commands"
-	authErrors "sso-service/internal/domain/entities/errors"
 )
 
-func (s *server) Refresh(ctx context.Context, request *ssov1.RefreshRequest) (*ssov1.RefreshResponse, error) {
+func (s *server) Refresh(ctx context.Context, request *authv1.RefreshRequest) (*authv1.RefreshResponse, error) {
 	// TODO: validate
 
 	result, err := s.auth.Refresh(ctx, commands.Refresh{
@@ -26,7 +26,7 @@ func (s *server) Refresh(ctx context.Context, request *ssov1.RefreshRequest) (*s
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
-	return &ssov1.RefreshResponse{
+	return &authv1.RefreshResponse{
 		AccessToken:  result.Tokens.AccessToken,
 		RefreshToken: result.Tokens.RefreshToken,
 	}, nil

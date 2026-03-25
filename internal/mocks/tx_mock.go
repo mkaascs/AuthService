@@ -5,9 +5,9 @@
 package mocks
 
 import (
+	tx "auth-service/internal/domain/interfaces/tx"
 	context "context"
 	reflect "reflect"
-	tx "sso-service/internal/domain/interfaces/tx"
 
 	gomock "github.com/golang/mock/gomock"
 )

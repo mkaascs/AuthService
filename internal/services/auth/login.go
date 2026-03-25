@@ -1,20 +1,19 @@
 package auth
 
 import (
+	"auth-service/internal/domain/dto/auth/commands"
+	"auth-service/internal/domain/dto/auth/results"
+	tokenCommands "auth-service/internal/domain/dto/tokens/commands"
+	userCommands "auth-service/internal/domain/dto/user/commands"
+	"auth-service/internal/domain/entities"
+	authErrors "auth-service/internal/domain/entities/errors"
+	sloglib "auth-service/internal/lib/log/slog"
+	"auth-service/internal/lib/refreshToken"
 	"context"
 	"errors"
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
 	"log/slog"
-	"sso-service/internal/domain/dto/auth/commands"
-	"sso-service/internal/domain/dto/auth/results"
-	jwtCommands "sso-service/internal/domain/dto/jwt/commands"
-	tokenCommands "sso-service/internal/domain/dto/tokens/commands"
-	userCommands "sso-service/internal/domain/dto/user/commands"
-	"sso-service/internal/domain/entities"
-	authErrors "sso-service/internal/domain/entities/errors"
-	sloglib "sso-service/internal/lib/log/slog"
-	"sso-service/internal/lib/refreshToken"
 )
 
 func (s *service) Login(ctx context.Context, command commands.Login) (*results.Login, error) {
@@ -65,7 +64,7 @@ func (s *service) Login(ctx context.Context, command commands.Login) (*results.L
 		return nil, fmt.Errorf("%s: failed to update refresh token: %w", fn, err)
 	}
 
-	accessToken, err := s.jwt.Generate(jwtCommands.Generate{
+	accessToken, err := s.accessTokens.Generate(tokenCommands.Generate{
 		UserID: user.ID,
 		Role:   user.Role,
 	})

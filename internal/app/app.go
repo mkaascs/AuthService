@@ -1,10 +1,10 @@
 package app
 
 import (
+	grpcapp "auth-service/internal/app/grpc"
+	"auth-service/internal/app/mysql"
+	"auth-service/internal/config"
 	"log/slog"
-	grpcapp "sso-service/internal/app/grpc"
-	"sso-service/internal/app/mysql"
-	"sso-service/internal/config"
 )
 
 type App struct {

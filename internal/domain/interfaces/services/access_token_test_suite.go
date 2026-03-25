@@ -1,10 +1,10 @@
 package services
 
 import (
+	"auth-service/internal/domain/dto/tokens/commands"
+	authErrors "auth-service/internal/domain/entities/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"sso-service/internal/domain/dto/tokens/commands"
-	authErrors "sso-service/internal/domain/entities/errors"
 	"testing"
 	"time"
 )

@@ -1,12 +1,12 @@
 package mysql
 
 import (
+	sloglib "auth-service/internal/lib/log/slog"
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"log/slog"
 	"os"
-	sloglib "sso-service/internal/lib/log/slog"
 )
 
 type App struct {

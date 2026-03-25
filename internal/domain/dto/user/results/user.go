@@ -1,6 +1,6 @@
 package results
 
-import "sso-service/internal/domain/entities"
+import "auth-service/internal/domain/entities"
 
 type Add struct {
 	UserID int64

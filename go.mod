@@ -1,4 +1,4 @@
-module sso-service
+module auth-service
 
 go 1.24.0
 
@@ -7,10 +7,12 @@ toolchain go1.24.10
 require (
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/golang-jwt/jwt/v5 v5.3.0
+	github.com/golang/mock v1.6.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/joho/godotenv v1.5.1
-	github.com/mkaascs/SsoProto v1.0.2
+	github.com/mkaascs/AuthProto v1.0.3
 	github.com/stretchr/testify v1.11.1
+	golang.org/x/crypto v0.45.0
 	google.golang.org/grpc v1.76.0
 )
 
@@ -18,9 +20,7 @@ require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/golang/mock v1.6.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/text v0.31.0 // indirect

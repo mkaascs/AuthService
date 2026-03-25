@@ -1,12 +1,12 @@
 package jwt
 
 import (
+	"auth-service/internal/domain/dto/tokens/commands"
+	"auth-service/internal/domain/dto/tokens/results"
+	authErrors "auth-service/internal/domain/entities/errors"
 	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
-	"sso-service/internal/domain/dto/tokens/commands"
-	"sso-service/internal/domain/dto/tokens/results"
-	authErrors "sso-service/internal/domain/entities/errors"
 )
 
 func (s *service) Parse(command commands.Parse) (*results.Parse, error) {

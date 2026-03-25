@@ -1,19 +1,19 @@
 package mysql
 
 import (
+	"auth-service/internal/domain/dto/user/commands"
+	"auth-service/internal/domain/dto/user/results"
+	"auth-service/internal/domain/entities"
+	authErrors "auth-service/internal/domain/entities/errors"
+	"auth-service/internal/domain/interfaces/repositories"
+	"auth-service/internal/domain/interfaces/tx"
+	sloglib "auth-service/internal/lib/log/slog"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/go-sql-driver/mysql"
 	"log/slog"
-	"sso-service/internal/domain/dto/user/commands"
-	"sso-service/internal/domain/dto/user/results"
-	"sso-service/internal/domain/entities"
-	authErrors "sso-service/internal/domain/entities/errors"
-	"sso-service/internal/domain/interfaces/repositories"
-	"sso-service/internal/domain/interfaces/tx"
-	sloglib "sso-service/internal/lib/log/slog"
 )
 
 type userRepo struct {

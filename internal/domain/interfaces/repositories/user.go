@@ -1,10 +1,10 @@
 package repositories
 
 import (
+	"auth-service/internal/domain/dto/user/commands"
+	"auth-service/internal/domain/dto/user/results"
+	"auth-service/internal/domain/interfaces/tx"
 	"context"
-	"sso-service/internal/domain/dto/user/commands"
-	"sso-service/internal/domain/dto/user/results"
-	"sso-service/internal/domain/interfaces/tx"
 )
 
 type User interface {

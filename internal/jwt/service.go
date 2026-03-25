@@ -1,19 +1,19 @@
 package jwt
 
 import (
+	"auth-service/internal/config"
+	"auth-service/internal/domain/interfaces/services"
 	"fmt"
 	"github.com/joho/godotenv"
 	"os"
-	"sso-service/internal/config"
-	"sso-service/internal/domain/interfaces/services"
 )
 
 type service struct {
 	secret []byte
-	config config.SsoConfig
+	config config.AuthConfig
 }
 
-func New(config config.SsoConfig) (services.AccessToken, error) {
+func New(config config.AuthConfig) (services.AccessToken, error) {
 	if err := godotenv.Load(); err != nil {
 		return nil, fmt.Errorf("failed to load .env file: %w", err)
 	}

@@ -1,24 +1,23 @@
 package auth
 
 import (
+	"auth-service/internal/config"
+	"auth-service/internal/domain/dto/auth/commands"
+	tokenCommands "auth-service/internal/domain/dto/tokens/commands"
+	jwtResults "auth-service/internal/domain/dto/tokens/results"
+	tokenResults "auth-service/internal/domain/dto/tokens/results"
+	userCommands "auth-service/internal/domain/dto/user/commands"
+	"auth-service/internal/domain/dto/user/results"
+	"auth-service/internal/domain/entities"
+	authErrors "auth-service/internal/domain/entities/errors"
+	"auth-service/internal/domain/interfaces/tx"
+	"auth-service/internal/lib/log"
+	"auth-service/internal/mocks"
 	"context"
 	"errors"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
-	"sso-service/internal/config"
-	"sso-service/internal/domain/dto/auth/commands"
-	jwtCommands "sso-service/internal/domain/dto/jwt/commands"
-	jwtResults "sso-service/internal/domain/dto/jwt/results"
-	tokenCommands "sso-service/internal/domain/dto/tokens/commands"
-	tokenResults "sso-service/internal/domain/dto/tokens/results"
-	userCommands "sso-service/internal/domain/dto/user/commands"
-	"sso-service/internal/domain/dto/user/results"
-	"sso-service/internal/domain/entities"
-	authErrors "sso-service/internal/domain/entities/errors"
-	"sso-service/internal/domain/interfaces/tx"
-	"sso-service/internal/lib/log"
-	"sso-service/internal/mocks"
 	"testing"
 	"time"
 )
@@ -33,10 +32,10 @@ func TestService_Login(t *testing.T) {
 	mockTx := mocks.NewMockTx(ctrl)
 
 	logger := log.MustLoad("local")
-	cfg := config.SsoConfig{
+	cfg := config.AuthConfig{
 		AccessTokenTTL:  15 * time.Minute,
 		RefreshTokenTTL: 15 * time.Minute,
-		Issuer:          "test-sso",
+		Issuer:          "test-auth",
 	}
 
 	secret := []byte("LPKCsOO6CzbXjpFUGdgZ8EtQA+oULGU+faKC60aS1Qk=")
@@ -77,7 +76,7 @@ func TestService_Login(t *testing.T) {
 			})
 
 		mockJWT.EXPECT().Generate(gomock.Any()).
-			DoAndReturn(func(command jwtCommands.Generate) (*jwtResults.Generate, error) {
+			DoAndReturn(func(command tokenCommands.Generate) (*jwtResults.Generate, error) {
 				assert.Equal(t, command.UserID, int64(2))
 				assert.Equal(t, command.Role, entities.RoleAdmin)
 				return &jwtResults.Generate{

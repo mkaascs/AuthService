@@ -1,8 +1,8 @@
 package jwt
 
 import (
-	"sso-service/internal/config"
-	"sso-service/internal/domain/interfaces/services"
+	"auth-service/internal/config"
+	"auth-service/internal/domain/interfaces/services"
 	"testing"
 	"time"
 )
@@ -10,11 +10,11 @@ import (
 func TestService_Parse(t *testing.T) {
 	suite := services.AccessTokenTestSuite{
 		New: func(t *testing.T, tokenTTL time.Duration) services.AccessToken {
-			issuer := "test-sso"
+			issuer := "test-auth"
 			secret := []byte("LPKCsOO6CzbXjpFUGdgZ8EtQA+oULGU+faKC60aS1Qk=")
 			return &service{
 				secret: secret,
-				config: config.SsoConfig{
+				config: config.AuthConfig{
 					Issuer:         issuer,
 					AccessTokenTTL: tokenTTL,
 				},

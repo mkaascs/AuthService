@@ -1,18 +1,17 @@
 package auth
 
 import (
+	"auth-service/internal/domain/dto/auth/commands"
+	"auth-service/internal/domain/dto/auth/results"
+	tokenCommands "auth-service/internal/domain/dto/tokens/commands"
+	"auth-service/internal/domain/entities"
+	authErrors "auth-service/internal/domain/entities/errors"
+	sloglib "auth-service/internal/lib/log/slog"
+	"auth-service/internal/lib/refreshToken"
 	"context"
 	"errors"
 	"fmt"
 	"log/slog"
-	"sso-service/internal/domain/dto/auth/commands"
-	"sso-service/internal/domain/dto/auth/results"
-	jwtCommands "sso-service/internal/domain/dto/jwt/commands"
-	tokenCommands "sso-service/internal/domain/dto/tokens/commands"
-	"sso-service/internal/domain/entities"
-	authErrors "sso-service/internal/domain/entities/errors"
-	sloglib "sso-service/internal/lib/log/slog"
-	"sso-service/internal/lib/refreshToken"
 )
 
 func (s *service) Refresh(ctx context.Context, command commands.Refresh) (*results.Refresh, error) {
@@ -55,7 +54,7 @@ func (s *service) Refresh(ctx context.Context, command commands.Refresh) (*resul
 		return nil, fmt.Errorf("%s: failed to get user: %w", fn, err)
 	}
 
-	accessToken, err := s.jwt.Generate(jwtCommands.Generate{
+	accessToken, err := s.accessTokens.Generate(tokenCommands.Generate{
 		UserID: user.ID,
 		Role:   user.Role,
 	})

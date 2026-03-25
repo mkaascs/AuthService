@@ -1,9 +1,9 @@
 package services
 
 import (
+	"auth-service/internal/domain/dto/auth/commands"
+	"auth-service/internal/domain/dto/auth/results"
 	"context"
-	"sso-service/internal/domain/dto/auth/commands"
-	"sso-service/internal/domain/dto/auth/results"
 )
 
 type Auth interface {

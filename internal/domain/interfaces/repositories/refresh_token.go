@@ -1,10 +1,10 @@
 package repositories
 
 import (
+	"auth-service/internal/domain/dto/tokens/commands"
+	"auth-service/internal/domain/dto/tokens/results"
+	"auth-service/internal/domain/interfaces/tx"
 	"context"
-	"sso-service/internal/domain/dto/tokens/commands"
-	"sso-service/internal/domain/dto/tokens/results"
-	"sso-service/internal/domain/interfaces/tx"
 )
 
 type RefreshToken interface {

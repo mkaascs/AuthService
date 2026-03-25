@@ -1,10 +1,10 @@
 package refreshToken
 
 import (
+	"auth-service/internal/lib/rand"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"sso-service/internal/lib/rand"
 )
 
 func Generate() string {

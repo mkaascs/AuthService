@@ -29,7 +29,7 @@ find "$INTERFACES_DIR" -name "*.go" | while read -r file; do
         -destination="$output_file" \
         -package="$pkg" \
         -imports="context=context" \
-        -self_package="sso-service/internal/mocks/$(echo "$dir" | sed 's/\//_/g')" \
+        -self_package="auth-service/internal/mocks/$(echo "$dir" | sed 's/\//_/g')" \
         2>/dev/null || {
             echo "WARNING: no interfaces found in $file"
         }

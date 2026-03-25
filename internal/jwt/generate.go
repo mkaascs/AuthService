@@ -1,10 +1,10 @@
 package jwt
 
 import (
+	"auth-service/internal/domain/dto/tokens/commands"
+	"auth-service/internal/domain/dto/tokens/results"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
-	"sso-service/internal/domain/dto/tokens/commands"
-	"sso-service/internal/domain/dto/tokens/results"
 	"time"
 )
 

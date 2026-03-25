@@ -1,28 +1,28 @@
 package auth
 
 import (
+	"auth-service/internal/config"
+	"auth-service/internal/domain/interfaces/repositories"
+	"auth-service/internal/domain/interfaces/services"
 	"log/slog"
-	"sso-service/internal/config"
-	"sso-service/internal/domain/interfaces/repositories"
-	"sso-service/internal/domain/interfaces/services"
 )
 
 type service struct {
-	users      repositories.User
-	tokens     repositories.RefreshToken
-	jwt        services.JWT
-	log        *slog.Logger
-	config     config.SsoConfig
-	hmacSecret []byte
+	users        repositories.User
+	tokens       repositories.RefreshToken
+	accessTokens services.AccessToken
+	log          *slog.Logger
+	config       config.AuthConfig
+	hmacSecret   []byte
 }
 
-func New(users repositories.User, tokens repositories.RefreshToken, jwt services.JWT, log *slog.Logger, config config.SsoConfig, hmacSecret []byte) services.Auth {
+func New(users repositories.User, tokens repositories.RefreshToken, accessTokens services.AccessToken, log *slog.Logger, config config.AuthConfig, hmacSecret []byte) services.Auth {
 	return &service{
-		users:      users,
-		tokens:     tokens,
-		jwt:        jwt,
-		log:        log,
-		config:     config,
-		hmacSecret: hmacSecret,
+		users:        users,
+		tokens:       tokens,
+		accessTokens: accessTokens,
+		log:          log,
+		config:       config,
+		hmacSecret:   hmacSecret,
 	}
 }

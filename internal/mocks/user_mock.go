@@ -5,11 +5,11 @@
 package mocks
 
 import (
+	commands "auth-service/internal/domain/dto/user/commands"
+	results "auth-service/internal/domain/dto/user/results"
+	tx "auth-service/internal/domain/interfaces/tx"
 	context "context"
 	reflect "reflect"
-	commands "sso-service/internal/domain/dto/user/commands"
-	results "sso-service/internal/domain/dto/user/results"
-	tx "sso-service/internal/domain/interfaces/tx"
 
 	gomock "github.com/golang/mock/gomock"
 )
