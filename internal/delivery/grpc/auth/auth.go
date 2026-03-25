@@ -36,7 +36,7 @@ func (as *authServer) Login(ctx context.Context, request *authv1.LoginRequest) (
 	return &authv1.LoginResponse{
 		AccessToken:  result.Tokens.AccessToken,
 		RefreshToken: result.Tokens.RefreshToken,
-		ExpiresIn:    result.ExpiresIn,
+		ExpiresIn:    int64(result.ExpiresIn.Seconds()),
 	}, nil
 }
 
@@ -58,7 +58,7 @@ func (as *authServer) Refresh(ctx context.Context, request *authv1.RefreshReques
 	return &authv1.RefreshResponse{
 		AccessToken:  result.Tokens.AccessToken,
 		RefreshToken: result.Tokens.RefreshToken,
-		ExpiresIn:    result.ExpiresIn,
+		ExpiresIn:    int64(result.ExpiresIn.Seconds()),
 	}, nil
 }
 

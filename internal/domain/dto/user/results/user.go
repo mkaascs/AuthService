@@ -7,5 +7,9 @@ type Add struct {
 }
 
 type Get struct {
-	entities.User
+	User entities.User
+}
+
+type Update struct {
+	User entities.User
 }

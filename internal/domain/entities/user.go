@@ -1,5 +1,7 @@
 package entities
 
+import "time"
+
 var (
 	RoleUser  = "user"
 	RoleAdmin = "admin"
@@ -9,7 +11,18 @@ var (
 type User struct {
 	ID           int64
 	Login        string
+	Email        string
 	PasswordHash string
-	Role         string
-	ClientID     string
+	Roles        []string
+	CreatedAt    time.Time
+}
+
+func (u *User) IsAdmin() bool {
+	for _, role := range u.Roles {
+		if role == RoleAdmin {
+			return true
+		}
+	}
+
+	return false
 }

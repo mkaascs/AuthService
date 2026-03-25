@@ -1,6 +1,9 @@
 package results
 
-import "auth-service/internal/domain/entities"
+import (
+	"auth-service/internal/domain/entities"
+	"time"
+)
 
 type Register struct {
 	UserID int64
@@ -8,10 +11,11 @@ type Register struct {
 
 type Login struct {
 	Tokens    entities.TokenPair
-	ExpiresIn int64
+	ExpiresIn time.Duration
+	User      entities.User
 }
 
 type Refresh struct {
 	Tokens    entities.TokenPair
-	ExpiresIn int64
+	ExpiresIn time.Duration
 }
