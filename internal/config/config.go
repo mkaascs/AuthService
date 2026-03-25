@@ -12,10 +12,12 @@ import (
 )
 
 type Config struct {
-	Env              string `yaml:"environment" env-default:"local"`
-	ConnectionString string `yaml:"connection_string" env-required:"true"`
-	GrpcConfig       `yaml:"grpc"`
-	AuthConfig       `yaml:"auth"`
+	Env                string `yaml:"environment" env-default:"local"`
+	DbHost             string `yaml:"db_host" env-required:"true"`
+	DbPassword         string `yaml:"-" env-required:"true" env:"MYSQL_ROOT_PASSWORD"`
+	DbConnectionString string `yaml:"-"`
+	GrpcConfig         `yaml:"grpc"`
+	AuthConfig         `yaml:"auth"`
 }
 
 type GrpcConfig struct {
@@ -53,6 +55,11 @@ func Load() (*Config, error) {
 	if err := cleanenv.ReadConfig(path, &config); err != nil {
 		return nil, fmt.Errorf("failed to read config: %w", err)
 	}
+
+	config.DbConnectionString = fmt.Sprintf(
+		"root:%s@tcp(%s)/URLShortener?charset=utf8&parseTime=True",
+		config.DbPassword,
+		config.DbHost)
 
 	return &config, nil
 }

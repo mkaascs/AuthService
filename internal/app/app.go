@@ -14,7 +14,7 @@ type App struct {
 
 func New(cfg config.Config, logger *slog.Logger) *App {
 	grpcApp := grpcapp.New(logger, cfg.Port)
-	mysqlApp, _ := mysql.New(logger, cfg.ConnectionString)
+	mysqlApp, _ := mysql.New(logger, cfg.DbConnectionString)
 
 	return &App{
 		GRPC:  grpcApp,
