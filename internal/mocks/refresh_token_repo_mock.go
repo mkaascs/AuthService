@@ -66,6 +66,21 @@ func (mr *MockRefreshTokenRepoMockRecorder) BeginTx(ctx interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginTx", reflect.TypeOf((*MockRefreshTokenRepo)(nil).BeginTx), ctx)
 }
 
+// DeleteByTokenTx mocks base method.
+func (m *MockRefreshTokenRepo) DeleteByTokenTx(ctx context.Context, tx tx.Tx, command commands.DeleteByToken) (*results.Delete, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteByTokenTx", ctx, tx, command)
+	ret0, _ := ret[0].(*results.Delete)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteByTokenTx indicates an expected call of DeleteByTokenTx.
+func (mr *MockRefreshTokenRepoMockRecorder) DeleteByTokenTx(ctx, tx, command interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteByTokenTx", reflect.TypeOf((*MockRefreshTokenRepo)(nil).DeleteByTokenTx), ctx, tx, command)
+}
+
 // UpdateByTokenTx mocks base method.
 func (m *MockRefreshTokenRepo) UpdateByTokenTx(ctx context.Context, tx tx.Tx, command commands.UpdateByToken) (*results.Update, error) {
 	m.ctrl.T.Helper()

@@ -18,7 +18,7 @@ func (s *service) Refresh(ctx context.Context, command commands.Refresh) (*resul
 	const fn = "services.auth.service.Refresh"
 	log := s.log.With(slog.String("fn", fn))
 
-	tx, err := s.tokens.BeginTx(ctx)
+	tx, err := s.tokenRepo.BeginTx(ctx)
 	if err != nil {
 		log.Error("failed to begin tx", sloglib.Error(err))
 		return nil, fmt.Errorf("%s: failed to begin tx: %w", fn, err)
@@ -32,7 +32,7 @@ func (s *service) Refresh(ctx context.Context, command commands.Refresh) (*resul
 
 	newRefreshToken := refreshToken.Generate()
 
-	result, err := s.tokens.UpdateByTokenTx(ctx, tx, tokenCommands.UpdateByToken{
+	result, err := s.tokenRepo.UpdateByTokenTx(ctx, tx, tokenCommands.UpdateByToken{
 		RefreshTokenHash:    refreshToken.Hash(command.RefreshToken, s.hmacSecret),
 		NewRefreshTokenHash: refreshToken.Hash(newRefreshToken, s.hmacSecret),
 	})
@@ -47,7 +47,7 @@ func (s *service) Refresh(ctx context.Context, command commands.Refresh) (*resul
 		return nil, fmt.Errorf("%s: failed to update refresh token: %w", fn, err)
 	}
 
-	user, err := s.users.GetByID(ctx, result.UserID)
+	user, err := s.userRepo.GetByID(ctx, result.UserID)
 	if err != nil {
 		log.Error("failed to get user", sloglib.Error(err))
 		return nil, fmt.Errorf("%s: failed to get user: %w", fn, err)
@@ -68,7 +68,7 @@ func (s *service) Refresh(ctx context.Context, command commands.Refresh) (*resul
 		return nil, fmt.Errorf("%s: failed to commit tx: %w", fn, err)
 	}
 
-	log.Info("user refreshed tokens successfully", slog.Int64("user_id", user.User.ID))
+	log.Info("user refreshed token successfully", slog.Int64("user_id", user.User.ID))
 
 	return &results.Refresh{
 		Tokens: entities.TokenPair{

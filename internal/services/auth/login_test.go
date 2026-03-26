@@ -28,7 +28,7 @@ func TestService_Login(t *testing.T) {
 
 	mockUserRepo := mocks.NewMockUserRepo(ctrl)
 	mockTokenRepo := mocks.NewMockRefreshTokenRepo(ctrl)
-	mockJWT := mocks.NewMockAccessToken(ctrl)
+	mockAccessToken := mocks.NewMockAccessToken(ctrl)
 	mockTx := mocks.NewMockTx(ctrl)
 
 	cfg := config.AuthConfig{
@@ -38,7 +38,15 @@ func TestService_Login(t *testing.T) {
 	}
 
 	secret := []byte("LPKCsOO6CzbXjpFUGdgZ8EtQA+oULGU+faKC60aS1Qk=")
-	authService := New(mockUserRepo, mockTokenRepo, mockJWT, log.NewPlugLogger(), cfg, secret)
+	authService := New(ServiceArgs{
+		AccessTokens: mockAccessToken,
+		HmacSecret:   secret,
+		Config:       cfg,
+	}, RepoArgs{
+		UserRepo:  mockUserRepo,
+		TokenRepo: mockTokenRepo},
+		log.NewPlugLogger())
+
 	loginCommand := commands.Login{
 		Login:    "mkaascs",
 		Password: "password123",
@@ -70,7 +78,7 @@ func TestService_Login(t *testing.T) {
 				return &tokenResults.Update{UserID: 2}, nil
 			})
 
-		mockJWT.EXPECT().Generate(gomock.Any()).
+		mockAccessToken.EXPECT().Generate(gomock.Any()).
 			DoAndReturn(func(command tokenCommands.Generate) (*jwtResults.Generate, error) {
 				assert.Equal(t, command.UserID, int64(2))
 				assert.Equal(t, command.Roles, []string{entities.RoleAdmin})
@@ -139,7 +147,7 @@ func TestService_Login(t *testing.T) {
 		mockTokenRepo.EXPECT().UpdateByUserIDTx(gomock.Any(), mockTx, gomock.Any()).
 			Return(&tokenResults.Update{UserID: 2}, nil)
 
-		mockJWT.EXPECT().Generate(gomock.Any()).
+		mockAccessToken.EXPECT().Generate(gomock.Any()).
 			Return(nil, errors.New("incorrect format"))
 
 		mockTx.EXPECT().Rollback().Return(nil)

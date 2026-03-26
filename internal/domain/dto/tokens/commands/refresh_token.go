@@ -17,3 +17,7 @@ type UpdateByUserID struct {
 	UserID              int64
 	NewRefreshTokenHash string
 }
+
+type DeleteByToken struct {
+	RefreshTokenHash string
+}

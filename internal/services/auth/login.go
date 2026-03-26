@@ -20,7 +20,7 @@ func (s *service) Login(ctx context.Context, command commands.Login) (*results.L
 	const fn = "services.auth.service.Login"
 	log := s.log.With(slog.String("fn", fn))
 
-	tx, err := s.users.BeginTx(ctx)
+	tx, err := s.userRepo.BeginTx(ctx)
 	if err != nil {
 		log.Error("failed to begin tx", sloglib.Error(err))
 		return nil, fmt.Errorf("%s: failed to begin tx: %w", fn, err)
@@ -32,7 +32,7 @@ func (s *service) Login(ctx context.Context, command commands.Login) (*results.L
 		}
 	}()
 
-	result, err := s.users.GetByLogin(ctx, userCommands.GetByLogin{
+	result, err := s.userRepo.GetByLogin(ctx, userCommands.GetByLogin{
 		Login: command.Login,
 	})
 
@@ -53,7 +53,7 @@ func (s *service) Login(ctx context.Context, command commands.Login) (*results.L
 	}
 
 	newRefreshToken := refreshToken.Generate()
-	_, err = s.tokens.UpdateByUserIDTx(ctx, tx, tokenCommands.UpdateByUserID{
+	_, err = s.tokenRepo.UpdateByUserIDTx(ctx, tx, tokenCommands.UpdateByUserID{
 		UserID:              result.User.ID,
 		NewRefreshTokenHash: refreshToken.Hash(newRefreshToken, s.hmacSecret),
 	})

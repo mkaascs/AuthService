@@ -27,7 +27,7 @@ func TestService_Register(t *testing.T) {
 
 	mockUserRepo := mocks.NewMockUserRepo(ctrl)
 	mockTokenRepo := mocks.NewMockRefreshTokenRepo(ctrl)
-	mockJWT := mocks.NewMockAccessToken(ctrl)
+	mockAccessToken := mocks.NewMockAccessToken(ctrl)
 	mockTx := mocks.NewMockTx(ctrl)
 
 	cfg := config.AuthConfig{
@@ -37,7 +37,14 @@ func TestService_Register(t *testing.T) {
 	}
 
 	secret := []byte("LPKCsOO6CzbXjpFUGdgZ8EtQA+oULGU+faKC60aS1Qk=")
-	authService := New(mockUserRepo, mockTokenRepo, mockJWT, log.NewPlugLogger(), cfg, secret)
+	authService := New(ServiceArgs{
+		AccessTokens: mockAccessToken,
+		HmacSecret:   secret,
+		Config:       cfg,
+	}, RepoArgs{
+		UserRepo:  mockUserRepo,
+		TokenRepo: mockTokenRepo},
+		log.NewPlugLogger())
 
 	registerCommand := commands.Register{
 		Login:    "mkaascs",

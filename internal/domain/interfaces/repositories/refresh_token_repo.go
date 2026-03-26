@@ -12,4 +12,5 @@ type RefreshTokenRepo interface {
 	AddTx(ctx context.Context, tx tx.Tx, command commands.Add) error
 	UpdateByTokenTx(ctx context.Context, tx tx.Tx, command commands.UpdateByToken) (*results.Update, error)
 	UpdateByUserIDTx(ctx context.Context, tx tx.Tx, command commands.UpdateByUserID) (*results.Update, error)
+	DeleteByTokenTx(ctx context.Context, tx tx.Tx, command commands.DeleteByToken) (*results.Delete, error)
 }

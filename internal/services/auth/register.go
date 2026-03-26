@@ -21,7 +21,7 @@ func (s *service) Register(ctx context.Context, command commands.Register) (*res
 	const fn = "services.auth.service.Register"
 	log := s.log.With(slog.String("fn", fn))
 
-	tx, err := s.users.BeginTx(ctx)
+	tx, err := s.userRepo.BeginTx(ctx)
 	if err != nil {
 		log.Error("failed to begin tx", sloglib.Error(err))
 		return nil, fmt.Errorf("%s: failed to begin tx: %w", fn, err)
@@ -39,7 +39,7 @@ func (s *service) Register(ctx context.Context, command commands.Register) (*res
 		return nil, fmt.Errorf("%s: failed to hash password: %w", fn, err)
 	}
 
-	result, err := s.users.AddTx(ctx, tx, userCommands.Add{
+	result, err := s.userRepo.AddTx(ctx, tx, userCommands.Add{
 		User: entities.User{
 			Login:        command.Login,
 			Email:        command.Email,
@@ -61,7 +61,7 @@ func (s *service) Register(ctx context.Context, command commands.Register) (*res
 
 	refreshTokenHash := refreshToken.Hash(refreshToken.Generate(), s.hmacSecret)
 
-	err = s.tokens.AddTx(ctx, tx, tokenCommands.Add{
+	err = s.tokenRepo.AddTx(ctx, tx, tokenCommands.Add{
 		UserID:           result.UserID,
 		RefreshTokenHash: refreshTokenHash,
 		ExpiresAt:        time.Now().Add(s.config.RefreshTokenTTL),

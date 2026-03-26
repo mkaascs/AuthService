@@ -7,22 +7,33 @@ import (
 	"log/slog"
 )
 
+type RepoArgs struct {
+	UserRepo  repositories.UserRepo
+	TokenRepo repositories.RefreshTokenRepo
+}
+
+type ServiceArgs struct {
+	AccessTokens services.AccessToken
+	Config       config.AuthConfig
+	HmacSecret   []byte
+}
+
 type service struct {
-	users        repositories.UserRepo
-	tokens       repositories.RefreshTokenRepo
+	userRepo     repositories.UserRepo
+	tokenRepo    repositories.RefreshTokenRepo
 	accessTokens services.AccessToken
 	log          *slog.Logger
 	config       config.AuthConfig
 	hmacSecret   []byte
 }
 
-func New(users repositories.UserRepo, tokens repositories.RefreshTokenRepo, accessTokens services.AccessToken, log *slog.Logger, config config.AuthConfig, hmacSecret []byte) services.Auth {
+func New(serviceArgs ServiceArgs, repoArgs RepoArgs, log *slog.Logger) services.Auth {
 	return &service{
-		users:        users,
-		tokens:       tokens,
-		accessTokens: accessTokens,
+		userRepo:     repoArgs.UserRepo,
+		tokenRepo:    repoArgs.TokenRepo,
+		accessTokens: serviceArgs.AccessTokens,
+		config:       serviceArgs.Config,
+		hmacSecret:   serviceArgs.HmacSecret,
 		log:          log,
-		config:       config,
-		hmacSecret:   hmacSecret,
 	}
 }
