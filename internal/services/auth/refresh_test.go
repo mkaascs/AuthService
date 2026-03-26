@@ -16,12 +16,14 @@ import (
 	"context"
 	"errors"
 	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 )
 
 func TestService_Refresh(t *testing.T) {
+	const TTL = 15 * time.Minute
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -31,8 +33,8 @@ func TestService_Refresh(t *testing.T) {
 	mockTx := mocks.NewMockTx(ctrl)
 
 	cfg := config.AuthConfig{
-		AccessTokenTTL:  15 * time.Minute,
-		RefreshTokenTTL: 15 * time.Minute,
+		AccessTokenTTL:  TTL,
+		RefreshTokenTTL: TTL,
 		Issuer:          "test-auth",
 	}
 
@@ -56,13 +58,13 @@ func TestService_Refresh(t *testing.T) {
 		mockTokenRepo.EXPECT().UpdateByTokenTx(gomock.Any(), mockTx, gomock.Any()).
 			DoAndReturn(func(ctx context.Context, tx tx.Tx, command tokenCommands.UpdateByToken) (*results.Update, error) {
 				refreshTokenHash := refreshToken.Hash(refreshCommand.RefreshToken, secret)
-				assert.Equal(t, refreshTokenHash, command.RefreshTokenHash)
+				require.Equal(t, refreshTokenHash, command.RefreshTokenHash)
 				return &results.Update{UserID: 2}, nil
 			})
 
 		mockUserRepo.EXPECT().GetByID(gomock.Any(), gomock.Any()).
 			DoAndReturn(func(ctx context.Context, id int64) (*userResults.Get, error) {
-				assert.Equal(t, id, int64(2))
+				require.Equal(t, id, int64(2))
 				return &userResults.Get{
 					User: entities.User{
 						ID:           2,
@@ -75,8 +77,8 @@ func TestService_Refresh(t *testing.T) {
 
 		mockAccessToken.EXPECT().Generate(gomock.Any()).
 			DoAndReturn(func(command tokenCommands.Generate) (*jwtResults.Generate, error) {
-				assert.Equal(t, command.UserID, int64(2))
-				assert.Equal(t, command.Roles, []string{entities.RoleAdmin})
+				require.Equal(t, command.UserID, int64(2))
+				require.Equal(t, command.Roles, []string{entities.RoleAdmin})
 				return &jwtResults.Generate{
 					Token: "access-token",
 				}, nil
@@ -86,11 +88,14 @@ func TestService_Refresh(t *testing.T) {
 		mockTx.EXPECT().Rollback().Return(nil)
 
 		result, err := authService.Refresh(context.Background(), refreshCommand)
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, result.Tokens.AccessToken, "access-token")
-		assert.NotEmpty(t, result.Tokens.RefreshToken)
-		assert.NotEqual(t, result.Tokens.RefreshToken, refreshCommand.RefreshToken)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, result.Tokens.AccessToken, "access-token")
+		require.NotEmpty(t, result.Tokens.RefreshToken)
+		require.NotEqual(t, result.Tokens.RefreshToken, refreshCommand.RefreshToken)
+
+		now := time.Now()
+		require.WithinDuration(t, now.Add(TTL), now.Add(result.ExpiresIn), time.Second)
 	})
 
 	t.Run("invalid refresh token", func(t *testing.T) {
@@ -102,8 +107,8 @@ func TestService_Refresh(t *testing.T) {
 		mockTx.EXPECT().Rollback().Return(nil)
 
 		result, err := authService.Refresh(context.Background(), refreshCommand)
-		assert.Nil(t, result)
-		assert.ErrorIs(t, err, authErrors.ErrInvalidRefreshToken)
+		require.Nil(t, result)
+		require.ErrorIs(t, err, authErrors.ErrInvalidRefreshToken)
 	})
 
 	t.Run("fail jwt generating", func(t *testing.T) {
@@ -126,7 +131,7 @@ func TestService_Refresh(t *testing.T) {
 		mockTx.EXPECT().Rollback().Return(nil)
 
 		result, err := authService.Refresh(context.Background(), refreshCommand)
-		assert.Error(t, err)
-		assert.Nil(t, result)
+		require.Error(t, err)
+		require.Nil(t, result)
 	})
 }

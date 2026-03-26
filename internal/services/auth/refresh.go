@@ -75,5 +75,6 @@ func (s *service) Refresh(ctx context.Context, command commands.Refresh) (*resul
 			AccessToken:  accessToken.Token,
 			RefreshToken: newRefreshToken,
 		},
+		ExpiresIn: s.config.AccessTokenTTL,
 	}, nil
 }

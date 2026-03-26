@@ -16,13 +16,15 @@ import (
 	"context"
 	"errors"
 	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
 	"testing"
 	"time"
 )
 
 func TestService_Login(t *testing.T) {
+	const TTL = 15 * time.Minute
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -32,8 +34,8 @@ func TestService_Login(t *testing.T) {
 	mockTx := mocks.NewMockTx(ctrl)
 
 	cfg := config.AuthConfig{
-		AccessTokenTTL:  15 * time.Minute,
-		RefreshTokenTTL: 15 * time.Minute,
+		AccessTokenTTL:  TTL,
+		RefreshTokenTTL: TTL,
 		Issuer:          "test-auth",
 	}
 
@@ -53,14 +55,14 @@ func TestService_Login(t *testing.T) {
 	}
 
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(loginCommand.Password), bcrypt.DefaultCost)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Run("success", func(t *testing.T) {
 		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 
 		mockUserRepo.EXPECT().GetByLogin(gomock.Any(), gomock.Any()).
 			DoAndReturn(func(ctx context.Context, command userCommands.GetByLogin) (*results.Get, error) {
-				assert.Equal(t, loginCommand.Login, command.Login)
+				require.Equal(t, loginCommand.Login, command.Login)
 				return &results.Get{
 					User: entities.User{
 						ID:           2,
@@ -73,15 +75,15 @@ func TestService_Login(t *testing.T) {
 
 		mockTokenRepo.EXPECT().UpdateByUserIDTx(gomock.Any(), mockTx, gomock.Any()).
 			DoAndReturn(func(ctx context.Context, tx tx.Tx, command tokenCommands.UpdateByUserID) (*tokenResults.Update, error) {
-				assert.Equal(t, command.UserID, int64(2))
-				assert.NotEmpty(t, command.NewRefreshTokenHash)
+				require.Equal(t, command.UserID, int64(2))
+				require.NotEmpty(t, command.NewRefreshTokenHash)
 				return &tokenResults.Update{UserID: 2}, nil
 			})
 
 		mockAccessToken.EXPECT().Generate(gomock.Any()).
 			DoAndReturn(func(command tokenCommands.Generate) (*jwtResults.Generate, error) {
-				assert.Equal(t, command.UserID, int64(2))
-				assert.Equal(t, command.Roles, []string{entities.RoleAdmin})
+				require.Equal(t, command.UserID, int64(2))
+				require.Equal(t, command.Roles, []string{entities.RoleAdmin})
 				return &jwtResults.Generate{
 					Token: "access-token",
 				}, nil
@@ -91,15 +93,19 @@ func TestService_Login(t *testing.T) {
 		mockTx.EXPECT().Rollback().Return(nil)
 
 		result, err := authService.Login(context.Background(), loginCommand)
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, "access-token", result.Tokens.AccessToken)
-		assert.NotEmpty(t, result.Tokens.RefreshToken)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, "access-token", result.Tokens.AccessToken)
+		require.NotEmpty(t, result.Tokens.RefreshToken)
+
+		now := time.Now()
+		require.WithinDuration(t, now.Add(TTL), now.Add(result.ExpiresIn), time.Second)
+		require.NotNil(t, result.User)
 	})
 
 	t.Run("invalid password", func(t *testing.T) {
 		userPasswordHash, err := bcrypt.GenerateFromPassword([]byte("password12345"), bcrypt.DefaultCost)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 
@@ -114,8 +120,8 @@ func TestService_Login(t *testing.T) {
 		mockTx.EXPECT().Rollback().Return(nil)
 
 		result, err := authService.Login(context.Background(), loginCommand)
-		assert.ErrorIs(t, err, authErrors.ErrInvalidPassword)
-		assert.Nil(t, result)
+		require.ErrorIs(t, err, authErrors.ErrInvalidPassword)
+		require.Nil(t, result)
 	})
 
 	t.Run("invalid login", func(t *testing.T) {
@@ -127,8 +133,8 @@ func TestService_Login(t *testing.T) {
 		mockTx.EXPECT().Rollback().Return(nil)
 
 		result, err := authService.Login(context.Background(), loginCommand)
-		assert.ErrorIs(t, err, authErrors.ErrUserNotFound)
-		assert.Nil(t, result)
+		require.ErrorIs(t, err, authErrors.ErrUserNotFound)
+		require.Nil(t, result)
 	})
 
 	t.Run("fail jwt generating", func(t *testing.T) {
@@ -153,7 +159,7 @@ func TestService_Login(t *testing.T) {
 		mockTx.EXPECT().Rollback().Return(nil)
 
 		result, err := authService.Login(context.Background(), loginCommand)
-		assert.Nil(t, result)
-		assert.Error(t, err)
+		require.Nil(t, result)
+		require.Error(t, err)
 	})
 }

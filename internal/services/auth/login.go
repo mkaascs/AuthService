@@ -85,5 +85,8 @@ func (s *service) Login(ctx context.Context, command commands.Login) (*results.L
 			AccessToken:  accessToken.Token,
 			RefreshToken: newRefreshToken,
 		},
+
+		ExpiresIn: s.config.AccessTokenTTL,
+		User:      result.User,
 	}, nil
 }

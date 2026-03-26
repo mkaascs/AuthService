@@ -10,17 +10,18 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"time"
 )
 
 type authServer struct {
 	authv1.UnimplementedAuthServer
-	auth services.Auth
+	service services.Auth
 }
 
 func (as *authServer) Login(ctx context.Context, request *authv1.LoginRequest) (*authv1.LoginResponse, error) {
 	// TODO: validate
 
-	result, err := as.auth.Login(ctx, commands.Login{
+	result, err := as.service.Login(ctx, commands.Login{
 		Login:    request.Login,
 		Password: request.Password,
 	})
@@ -36,14 +37,14 @@ func (as *authServer) Login(ctx context.Context, request *authv1.LoginRequest) (
 	return &authv1.LoginResponse{
 		AccessToken:  result.Tokens.AccessToken,
 		RefreshToken: result.Tokens.RefreshToken,
-		ExpiresIn:    int64(result.ExpiresIn.Seconds()),
+		ExpiresIn:    int64(result.ExpiresIn / time.Second),
 	}, nil
 }
 
 func (as *authServer) Refresh(ctx context.Context, request *authv1.RefreshRequest) (*authv1.RefreshResponse, error) {
 	// TODO: validate
 
-	result, err := as.auth.Refresh(ctx, commands.Refresh{
+	result, err := as.service.Refresh(ctx, commands.Refresh{
 		RefreshToken: request.RefreshToken,
 	})
 
@@ -58,14 +59,14 @@ func (as *authServer) Refresh(ctx context.Context, request *authv1.RefreshReques
 	return &authv1.RefreshResponse{
 		AccessToken:  result.Tokens.AccessToken,
 		RefreshToken: result.Tokens.RefreshToken,
-		ExpiresIn:    int64(result.ExpiresIn.Seconds()),
+		ExpiresIn:    int64(result.ExpiresIn / time.Second),
 	}, nil
 }
 
 func (as *authServer) Register(ctx context.Context, request *authv1.RegisterRequest) (*authv1.RegisterResponse, error) {
 	// TODO: validate
 
-	result, err := as.auth.Register(ctx, commands.Register{
+	result, err := as.service.Register(ctx, commands.Register{
 		Login:    request.Login,
 		Email:    request.Email,
 		Password: request.Password,
@@ -84,6 +85,24 @@ func (as *authServer) Register(ctx context.Context, request *authv1.RegisterRequ
 	}, nil
 }
 
+func (as *authServer) Logout(ctx context.Context, request *authv1.LogoutRequest) (*authv1.LogoutResponse, error) {
+	// TODO: validate
+
+	err := as.service.Logout(ctx, commands.Logout{
+		RefreshToken: request.RefreshToken,
+	})
+
+	if err != nil {
+		if errors.Is(err, authErrors.ErrInvalidRefreshToken) {
+			return nil, status.Error(codes.Unauthenticated, "invalid refresh token")
+		}
+
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+
+	return &authv1.LogoutResponse{}, nil
+}
+
 func RegisterAuthServer(gRPC *grpc.Server, auth services.Auth) {
-	authv1.RegisterAuthServer(gRPC, &authServer{auth: auth})
+	authv1.RegisterAuthServer(gRPC, &authServer{service: auth})
 }

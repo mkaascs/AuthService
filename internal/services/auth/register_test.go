@@ -14,7 +14,7 @@ import (
 	"context"
 	"errors"
 	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 )
@@ -57,18 +57,18 @@ func TestService_Register(t *testing.T) {
 
 		mockUserRepo.EXPECT().AddTx(gomock.Any(), mockTx, gomock.Any()).
 			DoAndReturn(func(ctx context.Context, tx tx.Tx, command userCommands.Add) (*results.Add, error) {
-				assert.Equal(t, command.User.Login, registerCommand.Login)
-				assert.Contains(t, command.User.PasswordHash, bcryptPrefix)
-				assert.Equal(t, command.User.Roles, []string{entities.RoleUser})
-				assert.Equal(t, command.User.Email, registerCommand.Email)
+				require.Equal(t, command.User.Login, registerCommand.Login)
+				require.Contains(t, command.User.PasswordHash, bcryptPrefix)
+				require.Equal(t, command.User.Roles, []string{entities.RoleUser})
+				require.Equal(t, command.User.Email, registerCommand.Email)
 				return &results.Add{UserID: 1}, nil
 			})
 
 		expectedExpiresAt := time.Now().Add(cfg.RefreshTokenTTL)
 		mockTokenRepo.EXPECT().AddTx(gomock.Any(), mockTx, gomock.Any()).
 			DoAndReturn(func(ctx context.Context, tx tx.Tx, command tokenCommands.Add) error {
-				assert.Equal(t, command.UserID, int64(1))
-				assert.WithinDuration(t, expectedExpiresAt, command.ExpiresAt, time.Second)
+				require.Equal(t, command.UserID, int64(1))
+				require.WithinDuration(t, expectedExpiresAt, command.ExpiresAt, time.Second)
 				return nil
 			})
 
@@ -76,9 +76,9 @@ func TestService_Register(t *testing.T) {
 		mockTx.EXPECT().Commit().Return(nil)
 
 		result, err := authService.Register(context.Background(), registerCommand)
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, result.UserID, int64(1))
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, result.UserID, int64(1))
 	})
 
 	t.Run("user already exists", func(t *testing.T) {
@@ -90,8 +90,8 @@ func TestService_Register(t *testing.T) {
 		mockTx.EXPECT().Rollback().Return(nil)
 
 		result, err := authService.Register(context.Background(), registerCommand)
-		assert.ErrorIs(t, err, authErrors.ErrUserAlreadyExists)
-		assert.Nil(t, result)
+		require.ErrorIs(t, err, authErrors.ErrUserAlreadyExists)
+		require.Nil(t, result)
 	})
 
 	t.Run("db internal error", func(t *testing.T) {
@@ -106,7 +106,7 @@ func TestService_Register(t *testing.T) {
 		mockTx.EXPECT().Rollback().Return(nil)
 
 		result, err := authService.Register(context.Background(), registerCommand)
-		assert.Error(t, err)
-		assert.Nil(t, result)
+		require.Error(t, err)
+		require.Nil(t, result)
 	})
 }
