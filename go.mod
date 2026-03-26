@@ -10,7 +10,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/joho/godotenv v1.5.1
-	github.com/mkaascs/AuthProto v1.0.3
+	github.com/mkaascs/AuthProto v1.0.5
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.45.0
 	google.golang.org/grpc v1.76.0

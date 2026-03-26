@@ -24,15 +24,16 @@ func (s *service) Parse(command commands.Parse) (*results.Parse, error) {
 			return nil, authErrors.ErrAccessTokenExpired
 		}
 
-		return nil, fmt.Errorf("failed to parse token: %w", err)
+		return nil, authErrors.ErrInvalidAccessToken
 	}
 
 	if !token.Valid {
-		return nil, fmt.Errorf("failed to parse jwt claims: token is not valid")
+		return nil, authErrors.ErrInvalidAccessToken
 	}
 
 	return &results.Parse{
-		UserID: claims.UserID,
-		Roles:  claims.Roles,
+		UserID:    claims.UserID,
+		Roles:     claims.Roles,
+		ExpiresAt: claims.ExpiresAt.Time,
 	}, nil
 }

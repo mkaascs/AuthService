@@ -96,14 +96,16 @@ func (ts *AccessTokenTestSuite) RunParseTests(t *testing.T) {
 			generateToken: false,
 			tokenTTL:      15 * time.Minute,
 			token:         "header.payload",
-			anyErr:        true,
+			expectedErr:   authErrors.ErrInvalidAccessToken,
+			anyErr:        false,
 		},
 		{
 			name:          "parse invalid access token",
 			generateToken: false,
 			tokenTTL:      15 * time.Minute,
-			token:         "mkaascs",
-			anyErr:        true,
+			token:         "",
+			expectedErr:   authErrors.ErrInvalidAccessToken,
+			anyErr:        false,
 		},
 	}
 
