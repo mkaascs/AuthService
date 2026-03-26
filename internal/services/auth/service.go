@@ -8,15 +8,15 @@ import (
 )
 
 type service struct {
-	users        repositories.User
-	tokens       repositories.RefreshToken
+	users        repositories.UserRepo
+	tokens       repositories.RefreshTokenRepo
 	accessTokens services.AccessToken
 	log          *slog.Logger
 	config       config.AuthConfig
 	hmacSecret   []byte
 }
 
-func New(users repositories.User, tokens repositories.RefreshToken, accessTokens services.AccessToken, log *slog.Logger, config config.AuthConfig, hmacSecret []byte) services.Auth {
+func New(users repositories.UserRepo, tokens repositories.RefreshTokenRepo, accessTokens services.AccessToken, log *slog.Logger, config config.AuthConfig, hmacSecret []byte) services.Auth {
 	return &service{
 		users:        users,
 		tokens:       tokens,

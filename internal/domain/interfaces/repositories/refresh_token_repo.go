@@ -7,7 +7,7 @@ import (
 	"context"
 )
 
-type RefreshToken interface {
+type RefreshTokenRepo interface {
 	tx.Beginner
 	AddTx(ctx context.Context, tx tx.Tx, command commands.Add) error
 	UpdateByTokenTx(ctx context.Context, tx tx.Tx, command commands.UpdateByToken) (*results.Update, error)

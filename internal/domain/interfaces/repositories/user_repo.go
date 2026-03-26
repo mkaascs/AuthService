@@ -7,7 +7,7 @@ import (
 	"context"
 )
 
-type User interface {
+type UserRepo interface {
 	tx.Beginner
 	AddTx(ctx context.Context, tx tx.Tx, command commands.Add) (*results.Add, error)
 	GetByID(ctx context.Context, userID int64) (*results.Get, error)

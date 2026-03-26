@@ -25,12 +25,11 @@ func TestService_Register(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockUser := mocks.NewMockUser(ctrl)
-	mockToken := mocks.NewMockRefreshToken(ctrl)
-	mockJWT := mocks.NewMockJWT(ctrl)
+	mockUserRepo := mocks.NewMockUserRepo(ctrl)
+	mockTokenRepo := mocks.NewMockRefreshTokenRepo(ctrl)
+	mockJWT := mocks.NewMockAccessToken(ctrl)
 	mockTx := mocks.NewMockTx(ctrl)
 
-	logger := log.MustLoad("local")
 	cfg := config.AuthConfig{
 		AccessTokenTTL:  15 * time.Minute,
 		RefreshTokenTTL: 15 * time.Minute,
@@ -38,33 +37,30 @@ func TestService_Register(t *testing.T) {
 	}
 
 	secret := []byte("LPKCsOO6CzbXjpFUGdgZ8EtQA+oULGU+faKC60aS1Qk=")
-	authService := New(mockUser, mockToken, mockJWT, logger, cfg, secret)
+	authService := New(mockUserRepo, mockTokenRepo, mockJWT, log.NewPlugLogger(), cfg, secret)
 
 	registerCommand := commands.Register{
-		Base: commands.Base{
-			Login:    "mkaascs",
-			Password: "password123",
-			ClientID: entities.WebAppClientID,
-		},
+		Login:    "mkaascs",
+		Email:    "email@gmail.com",
+		Password: "password123",
 	}
 
 	t.Run("success", func(t *testing.T) {
-		mockUser.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
+		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 
-		mockUser.EXPECT().AddTx(gomock.Any(), mockTx, gomock.Any()).
+		mockUserRepo.EXPECT().AddTx(gomock.Any(), mockTx, gomock.Any()).
 			DoAndReturn(func(ctx context.Context, tx tx.Tx, command userCommands.Add) (*results.Add, error) {
-				assert.Equal(t, command.Login, registerCommand.Login)
-				assert.Contains(t, command.PasswordHash, bcryptPrefix)
-				assert.Equal(t, command.Role, entities.RoleUser)
-				assert.Equal(t, command.ClientID, registerCommand.ClientID)
+				assert.Equal(t, command.User.Login, registerCommand.Login)
+				assert.Contains(t, command.User.PasswordHash, bcryptPrefix)
+				assert.Equal(t, command.User.Roles, []string{entities.RoleUser})
+				assert.Equal(t, command.User.Email, registerCommand.Email)
 				return &results.Add{UserID: 1}, nil
 			})
 
 		expectedExpiresAt := time.Now().Add(cfg.RefreshTokenTTL)
-		mockToken.EXPECT().AddTx(gomock.Any(), mockTx, gomock.Any()).
+		mockTokenRepo.EXPECT().AddTx(gomock.Any(), mockTx, gomock.Any()).
 			DoAndReturn(func(ctx context.Context, tx tx.Tx, command tokenCommands.Add) error {
 				assert.Equal(t, command.UserID, int64(1))
-				assert.Equal(t, command.ClientID, registerCommand.ClientID)
 				assert.WithinDuration(t, expectedExpiresAt, command.ExpiresAt, time.Second)
 				return nil
 			})
@@ -79,9 +75,9 @@ func TestService_Register(t *testing.T) {
 	})
 
 	t.Run("user already exists", func(t *testing.T) {
-		mockUser.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
+		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 
-		mockUser.EXPECT().AddTx(gomock.Any(), mockTx, gomock.Any()).
+		mockUserRepo.EXPECT().AddTx(gomock.Any(), mockTx, gomock.Any()).
 			Return(nil, authErrors.ErrUserAlreadyExists)
 
 		mockTx.EXPECT().Rollback().Return(nil)
@@ -92,12 +88,12 @@ func TestService_Register(t *testing.T) {
 	})
 
 	t.Run("db internal error", func(t *testing.T) {
-		mockUser.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
+		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 
-		mockUser.EXPECT().AddTx(gomock.Any(), mockTx, gomock.Any()).
+		mockUserRepo.EXPECT().AddTx(gomock.Any(), mockTx, gomock.Any()).
 			Return(&results.Add{UserID: 1}, nil)
 
-		mockToken.EXPECT().AddTx(gomock.Any(), mockTx, gomock.Any()).
+		mockTokenRepo.EXPECT().AddTx(gomock.Any(), mockTx, gomock.Any()).
 			Return(errors.New("failed to execute db statement"))
 
 		mockTx.EXPECT().Rollback().Return(nil)

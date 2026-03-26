@@ -26,12 +26,11 @@ func TestService_Login(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockUser := mocks.NewMockUser(ctrl)
-	mockToken := mocks.NewMockRefreshToken(ctrl)
-	mockJWT := mocks.NewMockJWT(ctrl)
+	mockUserRepo := mocks.NewMockUserRepo(ctrl)
+	mockTokenRepo := mocks.NewMockRefreshTokenRepo(ctrl)
+	mockJWT := mocks.NewMockAccessToken(ctrl)
 	mockTx := mocks.NewMockTx(ctrl)
 
-	logger := log.MustLoad("local")
 	cfg := config.AuthConfig{
 		AccessTokenTTL:  15 * time.Minute,
 		RefreshTokenTTL: 15 * time.Minute,
@@ -39,36 +38,32 @@ func TestService_Login(t *testing.T) {
 	}
 
 	secret := []byte("LPKCsOO6CzbXjpFUGdgZ8EtQA+oULGU+faKC60aS1Qk=")
-	authService := New(mockUser, mockToken, mockJWT, logger, cfg, secret)
+	authService := New(mockUserRepo, mockTokenRepo, mockJWT, log.NewPlugLogger(), cfg, secret)
 	loginCommand := commands.Login{
-		Base: commands.Base{
-			Login:    "mkaascs",
-			Password: "password123",
-			ClientID: entities.WebAppClientID,
-		},
+		Login:    "mkaascs",
+		Password: "password123",
 	}
 
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(loginCommand.Password), bcrypt.DefaultCost)
 	assert.NoError(t, err)
 
 	t.Run("success", func(t *testing.T) {
-		mockUser.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
+		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 
-		mockUser.EXPECT().GetByLogin(gomock.Any(), gomock.Any()).
+		mockUserRepo.EXPECT().GetByLogin(gomock.Any(), gomock.Any()).
 			DoAndReturn(func(ctx context.Context, command userCommands.GetByLogin) (*results.Get, error) {
 				assert.Equal(t, loginCommand.Login, command.Login)
-				assert.Equal(t, loginCommand.ClientID, command.ClientID)
 				return &results.Get{
 					User: entities.User{
 						ID:           2,
 						Login:        command.Login,
 						PasswordHash: string(passwordHash),
-						Role:         entities.RoleAdmin,
+						Roles:        []string{entities.RoleAdmin},
 					},
 				}, nil
 			})
 
-		mockToken.EXPECT().UpdateByUserIDTx(gomock.Any(), mockTx, gomock.Any()).
+		mockTokenRepo.EXPECT().UpdateByUserIDTx(gomock.Any(), mockTx, gomock.Any()).
 			DoAndReturn(func(ctx context.Context, tx tx.Tx, command tokenCommands.UpdateByUserID) (*tokenResults.Update, error) {
 				assert.Equal(t, command.UserID, int64(2))
 				assert.NotEmpty(t, command.NewRefreshTokenHash)
@@ -78,7 +73,7 @@ func TestService_Login(t *testing.T) {
 		mockJWT.EXPECT().Generate(gomock.Any()).
 			DoAndReturn(func(command tokenCommands.Generate) (*jwtResults.Generate, error) {
 				assert.Equal(t, command.UserID, int64(2))
-				assert.Equal(t, command.Role, entities.RoleAdmin)
+				assert.Equal(t, command.Roles, []string{entities.RoleAdmin})
 				return &jwtResults.Generate{
 					Token: "access-token",
 				}, nil
@@ -98,9 +93,9 @@ func TestService_Login(t *testing.T) {
 		userPasswordHash, err := bcrypt.GenerateFromPassword([]byte("password12345"), bcrypt.DefaultCost)
 		assert.NoError(t, err)
 
-		mockUser.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
+		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 
-		mockUser.EXPECT().GetByLogin(gomock.Any(), gomock.Any()).
+		mockUserRepo.EXPECT().GetByLogin(gomock.Any(), gomock.Any()).
 			Return(&results.Get{
 				User: entities.User{
 					ID:           2,
@@ -116,9 +111,9 @@ func TestService_Login(t *testing.T) {
 	})
 
 	t.Run("invalid login", func(t *testing.T) {
-		mockUser.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
+		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 
-		mockUser.EXPECT().GetByLogin(gomock.Any(), gomock.Any()).
+		mockUserRepo.EXPECT().GetByLogin(gomock.Any(), gomock.Any()).
 			Return(nil, authErrors.ErrUserNotFound)
 
 		mockTx.EXPECT().Rollback().Return(nil)
@@ -129,19 +124,19 @@ func TestService_Login(t *testing.T) {
 	})
 
 	t.Run("fail jwt generating", func(t *testing.T) {
-		mockUser.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
+		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 
-		mockUser.EXPECT().GetByLogin(gomock.Any(), gomock.Any()).
+		mockUserRepo.EXPECT().GetByLogin(gomock.Any(), gomock.Any()).
 			Return(&results.Get{
 				User: entities.User{
 					ID:           2,
 					Login:        loginCommand.Login,
 					PasswordHash: string(passwordHash),
-					Role:         entities.RoleAdmin,
+					Roles:        []string{entities.RoleAdmin},
 				},
 			}, nil)
 
-		mockToken.EXPECT().UpdateByUserIDTx(gomock.Any(), mockTx, gomock.Any()).
+		mockTokenRepo.EXPECT().UpdateByUserIDTx(gomock.Any(), mockTx, gomock.Any()).
 			Return(&tokenResults.Update{UserID: 2}, nil)
 
 		mockJWT.EXPECT().Generate(gomock.Any()).

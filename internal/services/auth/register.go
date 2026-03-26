@@ -40,10 +40,13 @@ func (s *service) Register(ctx context.Context, command commands.Register) (*res
 	}
 
 	result, err := s.users.AddTx(ctx, tx, userCommands.Add{
-		Login:        command.Login,
-		PasswordHash: string(hashedBytes),
-		Role:         entities.RoleUser,
-		ClientID:     command.ClientID,
+		User: entities.User{
+			Login:        command.Login,
+			Email:        command.Email,
+			PasswordHash: string(hashedBytes),
+			Roles:        []string{entities.RoleUser},
+			CreatedAt:    time.Now(),
+		},
 	})
 
 	if err != nil {
@@ -62,7 +65,6 @@ func (s *service) Register(ctx context.Context, command commands.Register) (*res
 		UserID:           result.UserID,
 		RefreshTokenHash: refreshTokenHash,
 		ExpiresAt:        time.Now().Add(s.config.RefreshTokenTTL),
-		ClientID:         command.ClientID,
 	})
 
 	if err != nil {

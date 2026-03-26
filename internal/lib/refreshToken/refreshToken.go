@@ -8,7 +8,7 @@ import (
 )
 
 func Generate() string {
-	token, _ := rand.GenerateBase64(32)
+	token, _ := rand.GenerateSecureToken(32)
 	return token
 }
 

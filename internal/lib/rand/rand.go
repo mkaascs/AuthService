@@ -2,12 +2,12 @@ package rand
 
 import (
 	"crypto/rand"
-	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 )
 
-func GenerateBase64(length int) (string, error) {
+func GenerateSecureToken(length int) (string, error) {
 	if length <= 0 {
 		return "", errors.New("length must be greater than zero")
 	}
@@ -17,5 +17,5 @@ func GenerateBase64(length int) (string, error) {
 		return "", fmt.Errorf("failed to generate random string: %w", err)
 	}
 
-	return base64.RawStdEncoding.EncodeToString(result), nil
+	return hex.EncodeToString(result), nil
 }

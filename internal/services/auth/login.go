@@ -32,9 +32,8 @@ func (s *service) Login(ctx context.Context, command commands.Login) (*results.L
 		}
 	}()
 
-	user, err := s.users.GetByLogin(ctx, userCommands.GetByLogin{
-		Login:    command.Login,
-		ClientID: command.ClientID,
+	result, err := s.users.GetByLogin(ctx, userCommands.GetByLogin{
+		Login: command.Login,
 	})
 
 	if err != nil {
@@ -47,15 +46,15 @@ func (s *service) Login(ctx context.Context, command commands.Login) (*results.L
 		return nil, fmt.Errorf("%s: failed to get user by login: %w", fn, err)
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(command.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(result.User.PasswordHash), []byte(command.Password))
 	if err != nil {
-		log.Info("password hashes are different", slog.Int64("user_id", user.ID))
+		log.Info("password hashes are different", slog.Int64("user_id", result.User.ID))
 		return nil, authErrors.ErrInvalidPassword
 	}
 
 	newRefreshToken := refreshToken.Generate()
 	_, err = s.tokens.UpdateByUserIDTx(ctx, tx, tokenCommands.UpdateByUserID{
-		UserID:              user.ID,
+		UserID:              result.User.ID,
 		NewRefreshTokenHash: refreshToken.Hash(newRefreshToken, s.hmacSecret),
 	})
 
@@ -65,8 +64,8 @@ func (s *service) Login(ctx context.Context, command commands.Login) (*results.L
 	}
 
 	accessToken, err := s.accessTokens.Generate(tokenCommands.Generate{
-		UserID: user.ID,
-		Role:   user.Role,
+		UserID: result.User.ID,
+		Roles:  result.User.Roles,
 	})
 
 	if err != nil {
@@ -79,7 +78,7 @@ func (s *service) Login(ctx context.Context, command commands.Login) (*results.L
 		return nil, fmt.Errorf("%s: failed to commit tx: %w", fn, err)
 	}
 
-	log.Info("user successfully logged in", slog.Int64("user_id", user.ID))
+	log.Info("user successfully logged in", slog.Int64("user_id", result.User.ID))
 
 	return &results.Login{
 		Tokens: entities.TokenPair{

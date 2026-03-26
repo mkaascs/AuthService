@@ -25,12 +25,11 @@ func TestService_Refresh(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockUser := mocks.NewMockUser(ctrl)
-	mockToken := mocks.NewMockRefreshToken(ctrl)
-	mockJWT := mocks.NewMockJWT(ctrl)
+	mockUserRepo := mocks.NewMockUserRepo(ctrl)
+	mockTokenRepo := mocks.NewMockRefreshTokenRepo(ctrl)
+	mockJWT := mocks.NewMockAccessToken(ctrl)
 	mockTx := mocks.NewMockTx(ctrl)
 
-	logger := log.MustLoad("local")
 	cfg := config.AuthConfig{
 		AccessTokenTTL:  15 * time.Minute,
 		RefreshTokenTTL: 15 * time.Minute,
@@ -38,25 +37,23 @@ func TestService_Refresh(t *testing.T) {
 	}
 
 	secret := []byte("LPKCsOO6CzbXjpFUGdgZ8EtQA+oULGU+faKC60aS1Qk=")
-	authService := New(mockUser, mockToken, mockJWT, logger, cfg, secret)
+	authService := New(mockUserRepo, mockTokenRepo, mockJWT, log.NewPlugLogger(), cfg, secret)
 
 	refreshCommand := commands.Refresh{
 		RefreshToken: "refresh-token",
-		ClientID:     entities.WebAppClientID,
 	}
 
 	t.Run("success", func(t *testing.T) {
-		mockToken.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
+		mockTokenRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 
-		mockToken.EXPECT().UpdateByTokenTx(gomock.Any(), mockTx, gomock.Any()).
+		mockTokenRepo.EXPECT().UpdateByTokenTx(gomock.Any(), mockTx, gomock.Any()).
 			DoAndReturn(func(ctx context.Context, tx tx.Tx, command tokenCommands.UpdateByToken) (*results.Update, error) {
 				refreshTokenHash := refreshToken.Hash(refreshCommand.RefreshToken, secret)
 				assert.Equal(t, refreshTokenHash, command.RefreshTokenHash)
-				assert.Equal(t, refreshCommand.ClientID, command.ClientID)
 				return &results.Update{UserID: 2}, nil
 			})
 
-		mockUser.EXPECT().GetByID(gomock.Any(), gomock.Any()).
+		mockUserRepo.EXPECT().GetByID(gomock.Any(), gomock.Any()).
 			DoAndReturn(func(ctx context.Context, id int64) (*userResults.Get, error) {
 				assert.Equal(t, id, int64(2))
 				return &userResults.Get{
@@ -64,7 +61,7 @@ func TestService_Refresh(t *testing.T) {
 						ID:           2,
 						Login:        "mkaascs",
 						PasswordHash: "password-hash",
-						Role:         entities.RoleAdmin,
+						Roles:        []string{entities.RoleAdmin},
 					},
 				}, nil
 			})
@@ -72,7 +69,7 @@ func TestService_Refresh(t *testing.T) {
 		mockJWT.EXPECT().Generate(gomock.Any()).
 			DoAndReturn(func(command tokenCommands.Generate) (*jwtResults.Generate, error) {
 				assert.Equal(t, command.UserID, int64(2))
-				assert.Equal(t, command.Role, entities.RoleAdmin)
+				assert.Equal(t, command.Roles, []string{entities.RoleAdmin})
 				return &jwtResults.Generate{
 					Token: "access-token",
 				}, nil
@@ -90,9 +87,9 @@ func TestService_Refresh(t *testing.T) {
 	})
 
 	t.Run("invalid refresh token", func(t *testing.T) {
-		mockToken.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
+		mockTokenRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 
-		mockToken.EXPECT().UpdateByTokenTx(gomock.Any(), mockTx, gomock.Any()).
+		mockTokenRepo.EXPECT().UpdateByTokenTx(gomock.Any(), mockTx, gomock.Any()).
 			Return(nil, authErrors.ErrInvalidRefreshToken)
 
 		mockTx.EXPECT().Rollback().Return(nil)
@@ -103,16 +100,16 @@ func TestService_Refresh(t *testing.T) {
 	})
 
 	t.Run("fail jwt generating", func(t *testing.T) {
-		mockToken.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
+		mockTokenRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 
-		mockToken.EXPECT().UpdateByTokenTx(gomock.Any(), mockTx, gomock.Any()).
+		mockTokenRepo.EXPECT().UpdateByTokenTx(gomock.Any(), mockTx, gomock.Any()).
 			Return(&results.Update{UserID: 2}, nil)
 
-		mockUser.EXPECT().GetByID(gomock.Any(), gomock.Any()).
+		mockUserRepo.EXPECT().GetByID(gomock.Any(), gomock.Any()).
 			Return(&userResults.Get{
 				User: entities.User{
-					ID:   2,
-					Role: entities.RoleAdmin,
+					ID:    2,
+					Roles: []string{entities.RoleAdmin},
 				},
 			}, nil)
 

@@ -35,7 +35,6 @@ func (s *service) Refresh(ctx context.Context, command commands.Refresh) (*resul
 	result, err := s.tokens.UpdateByTokenTx(ctx, tx, tokenCommands.UpdateByToken{
 		RefreshTokenHash:    refreshToken.Hash(command.RefreshToken, s.hmacSecret),
 		NewRefreshTokenHash: refreshToken.Hash(newRefreshToken, s.hmacSecret),
-		ClientID:            command.ClientID,
 	})
 
 	if err != nil {
@@ -55,8 +54,8 @@ func (s *service) Refresh(ctx context.Context, command commands.Refresh) (*resul
 	}
 
 	accessToken, err := s.accessTokens.Generate(tokenCommands.Generate{
-		UserID: user.ID,
-		Role:   user.Role,
+		UserID: user.User.ID,
+		Roles:  user.User.Roles,
 	})
 
 	if err != nil {
@@ -69,7 +68,7 @@ func (s *service) Refresh(ctx context.Context, command commands.Refresh) (*resul
 		return nil, fmt.Errorf("%s: failed to commit tx: %w", fn, err)
 	}
 
-	log.Info("user refreshed tokens successfully", slog.Int64("user_id", user.ID))
+	log.Info("user refreshed tokens successfully", slog.Int64("user_id", user.User.ID))
 
 	return &results.Refresh{
 		Tokens: entities.TokenPair{
