@@ -6,5 +6,5 @@ type Generate struct {
 
 type Parse struct {
 	UserID int64
-	Role   string
+	Roles  []string
 }

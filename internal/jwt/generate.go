@@ -9,8 +9,8 @@ import (
 )
 
 type Claims struct {
-	UserID int64  `json:"sub"`
-	Role   string `json:"role"`
+	UserID int64    `json:"sub"`
+	Roles  []string `json:"roles"`
 	jwt.RegisteredClaims
 }
 
@@ -18,7 +18,7 @@ func (s *service) Generate(command commands.Generate) (*results.Generate, error)
 	now := time.Now()
 	claims := Claims{
 		UserID: command.UserID,
-		Role:   command.Role,
+		Roles:  command.Roles,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(now.Add(s.config.AccessTokenTTL)),
 			IssuedAt:  jwt.NewNumericDate(now),

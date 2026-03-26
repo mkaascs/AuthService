@@ -33,6 +33,6 @@ func (s *service) Parse(command commands.Parse) (*results.Parse, error) {
 
 	return &results.Parse{
 		UserID: claims.UserID,
-		Role:   claims.Role,
+		Roles:  claims.Roles,
 	}, nil
 }
