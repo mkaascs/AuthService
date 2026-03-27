@@ -62,7 +62,7 @@ func TestService_Refresh(t *testing.T) {
 				return &results.Update{UserID: 2}, nil
 			})
 
-		mockUserRepo.EXPECT().GetByID(gomock.Any(), gomock.Any()).
+		mockUserRepo.EXPECT().GetByIDTx(gomock.Any(), mockTx, gomock.Any()).
 			DoAndReturn(func(ctx context.Context, id int64) (*userResults.Get, error) {
 				require.Equal(t, id, int64(2))
 				return &userResults.Get{
@@ -117,7 +117,7 @@ func TestService_Refresh(t *testing.T) {
 		mockTokenRepo.EXPECT().UpdateByTokenTx(gomock.Any(), mockTx, gomock.Any()).
 			Return(&results.Update{UserID: 2}, nil)
 
-		mockUserRepo.EXPECT().GetByID(gomock.Any(), gomock.Any()).
+		mockUserRepo.EXPECT().GetByIDTx(gomock.Any(), mockTx, gomock.Any()).
 			Return(&userResults.Get{
 				User: entities.User{
 					ID:    2,

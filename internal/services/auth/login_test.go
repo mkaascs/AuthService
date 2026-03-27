@@ -60,7 +60,7 @@ func TestService_Login(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 
-		mockUserRepo.EXPECT().GetByLogin(gomock.Any(), gomock.Any()).
+		mockUserRepo.EXPECT().GetByLoginTx(gomock.Any(), mockTx, gomock.Any()).
 			DoAndReturn(func(ctx context.Context, command userCommands.GetByLogin) (*results.Get, error) {
 				require.Equal(t, loginCommand.Login, command.Login)
 				return &results.Get{
@@ -109,7 +109,7 @@ func TestService_Login(t *testing.T) {
 
 		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 
-		mockUserRepo.EXPECT().GetByLogin(gomock.Any(), gomock.Any()).
+		mockUserRepo.EXPECT().GetByLoginTx(gomock.Any(), mockTx, gomock.Any()).
 			Return(&results.Get{
 				User: entities.User{
 					ID:           2,
@@ -127,7 +127,7 @@ func TestService_Login(t *testing.T) {
 	t.Run("invalid login", func(t *testing.T) {
 		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 
-		mockUserRepo.EXPECT().GetByLogin(gomock.Any(), gomock.Any()).
+		mockUserRepo.EXPECT().GetByLoginTx(gomock.Any(), mockTx, gomock.Any()).
 			Return(nil, authErrors.ErrUserNotFound)
 
 		mockTx.EXPECT().Rollback().Return(nil)
@@ -140,7 +140,7 @@ func TestService_Login(t *testing.T) {
 	t.Run("fail jwt generating", func(t *testing.T) {
 		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 
-		mockUserRepo.EXPECT().GetByLogin(gomock.Any(), gomock.Any()).
+		mockUserRepo.EXPECT().GetByLoginTx(gomock.Any(), mockTx, gomock.Any()).
 			Return(&results.Get{
 				User: entities.User{
 					ID:           2,

@@ -67,34 +67,34 @@ func (mr *MockUserRepoMockRecorder) BeginTx(ctx interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginTx", reflect.TypeOf((*MockUserRepo)(nil).BeginTx), ctx)
 }
 
-// GetByID mocks base method.
-func (m *MockUserRepo) GetByID(ctx context.Context, userID int64) (*results.Get, error) {
+// GetByIDTx mocks base method.
+func (m *MockUserRepo) GetByIDTx(ctx context.Context, tx tx.Tx, userID int64) (*results.Get, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByID", ctx, userID)
+	ret := m.ctrl.Call(m, "GetByIDTx", ctx, tx, userID)
 	ret0, _ := ret[0].(*results.Get)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetByID indicates an expected call of GetByID.
-func (mr *MockUserRepoMockRecorder) GetByID(ctx, userID interface{}) *gomock.Call {
+// GetByIDTx indicates an expected call of GetByIDTx.
+func (mr *MockUserRepoMockRecorder) GetByIDTx(ctx, tx, userID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockUserRepo)(nil).GetByID), ctx, userID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByIDTx", reflect.TypeOf((*MockUserRepo)(nil).GetByIDTx), ctx, tx, userID)
 }
 
-// GetByLogin mocks base method.
-func (m *MockUserRepo) GetByLogin(ctx context.Context, command commands.GetByLogin) (*results.Get, error) {
+// GetByLoginTx mocks base method.
+func (m *MockUserRepo) GetByLoginTx(ctx context.Context, tx tx.Tx, command commands.GetByLogin) (*results.Get, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByLogin", ctx, command)
+	ret := m.ctrl.Call(m, "GetByLoginTx", ctx, tx, command)
 	ret0, _ := ret[0].(*results.Get)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetByLogin indicates an expected call of GetByLogin.
-func (mr *MockUserRepoMockRecorder) GetByLogin(ctx, command interface{}) *gomock.Call {
+// GetByLoginTx indicates an expected call of GetByLoginTx.
+func (mr *MockUserRepoMockRecorder) GetByLoginTx(ctx, tx, command interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByLogin", reflect.TypeOf((*MockUserRepo)(nil).GetByLogin), ctx, command)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByLoginTx", reflect.TypeOf((*MockUserRepo)(nil).GetByLoginTx), ctx, tx, command)
 }
 
 // UpdatePasswordTx mocks base method.

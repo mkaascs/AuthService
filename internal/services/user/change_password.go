@@ -27,7 +27,7 @@ func (s *service) ChangePassword(ctx context.Context, command commands.ChangePas
 		}
 	}()
 
-	user, err := s.userRepo.GetByID(ctx, command.ID)
+	user, err := s.userRepo.GetByIDTx(ctx, tx, command.ID)
 	if err != nil {
 		if errors.Is(err, authErrors.ErrUserNotFound) {
 			log.Info("failed to get user", sloglib.Error(err))

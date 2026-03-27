@@ -12,6 +12,6 @@ type UserRepo interface {
 	AddTx(ctx context.Context, tx tx.Tx, command commands.Add) (*results.Add, error)
 	UpdateTx(ctx context.Context, tx tx.Tx, command commands.Update) (*results.Update, error)
 	UpdatePasswordTx(ctx context.Context, tx tx.Tx, command commands.UpdatePassword) error
-	GetByID(ctx context.Context, userID int64) (*results.Get, error)
-	GetByLogin(ctx context.Context, command commands.GetByLogin) (*results.Get, error)
+	GetByIDTx(ctx context.Context, tx tx.Tx, userID int64) (*results.Get, error)
+	GetByLoginTx(ctx context.Context, tx tx.Tx, command commands.GetByLogin) (*results.Get, error)
 }

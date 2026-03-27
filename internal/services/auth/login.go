@@ -32,7 +32,7 @@ func (s *service) Login(ctx context.Context, command commands.Login) (*results.L
 		}
 	}()
 
-	result, err := s.userRepo.GetByLogin(ctx, userCommands.GetByLogin{
+	result, err := s.userRepo.GetByLoginTx(ctx, tx, userCommands.GetByLogin{
 		Login: command.Login,
 	})
 

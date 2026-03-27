@@ -15,7 +15,19 @@ func (s *service) GetUser(ctx context.Context, command commands.GetById) (*resul
 	const fn = "services.user.service.GetUser"
 	log := s.log.With(slog.String("fn", fn))
 
-	result, err := s.userRepo.GetByID(ctx, command.ID)
+	tx, err := s.userRepo.BeginTx(ctx)
+	if err != nil {
+		log.Error("failed to begin tx", sloglib.Error(err))
+		return nil, err
+	}
+
+	defer func() {
+		if err := tx.Rollback(); err != nil {
+			log.Error("failed to rollback tx", sloglib.Error(err))
+		}
+	}()
+
+	result, err := s.userRepo.GetByIDTx(ctx, tx, command.ID)
 	if err != nil {
 		if errors.Is(err, authErrors.ErrUserNotFound) {
 			log.Info("failed to get user by id", sloglib.Error(err))

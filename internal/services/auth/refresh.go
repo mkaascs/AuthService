@@ -47,7 +47,7 @@ func (s *service) Refresh(ctx context.Context, command commands.Refresh) (*resul
 		return nil, fmt.Errorf("%s: failed to update refresh token: %w", fn, err)
 	}
 
-	user, err := s.userRepo.GetByID(ctx, result.UserID)
+	user, err := s.userRepo.GetByIDTx(ctx, tx, result.UserID)
 	if err != nil {
 		log.Error("failed to get user", sloglib.Error(err))
 		return nil, fmt.Errorf("%s: failed to get user: %w", fn, err)
