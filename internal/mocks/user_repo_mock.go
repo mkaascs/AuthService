@@ -96,3 +96,32 @@ func (mr *MockUserRepoMockRecorder) GetByLogin(ctx, command interface{}) *gomock
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByLogin", reflect.TypeOf((*MockUserRepo)(nil).GetByLogin), ctx, command)
 }
+
+// UpdatePasswordTx mocks base method.
+func (m *MockUserRepo) UpdatePasswordTx(ctx context.Context, tx tx.Tx, command commands.UpdatePassword) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatePasswordTx", ctx, tx, command)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdatePasswordTx indicates an expected call of UpdatePasswordTx.
+func (mr *MockUserRepoMockRecorder) UpdatePasswordTx(ctx, tx, command interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePasswordTx", reflect.TypeOf((*MockUserRepo)(nil).UpdatePasswordTx), ctx, tx, command)
+}
+
+// UpdateTx mocks base method.
+func (m *MockUserRepo) UpdateTx(ctx context.Context, tx tx.Tx, command commands.Update) (*results.Update, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateTx", ctx, tx, command)
+	ret0, _ := ret[0].(*results.Update)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateTx indicates an expected call of UpdateTx.
+func (mr *MockUserRepoMockRecorder) UpdateTx(ctx, tx, command interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTx", reflect.TypeOf((*MockUserRepo)(nil).UpdateTx), ctx, tx, command)
+}

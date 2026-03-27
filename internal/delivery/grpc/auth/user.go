@@ -1,14 +1,101 @@
 package auth
 
 import (
+	"auth-service/internal/domain/dto/user/commands"
+	"auth-service/internal/domain/entities"
+	authErrors "auth-service/internal/domain/entities/errors"
+	"auth-service/internal/domain/interfaces/services"
+	"context"
+	"errors"
 	authv1 "github.com/mkaascs/AuthProto/gen/go/auth"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type userServer struct {
 	authv1.UnimplementedUserServer
+	users services.User
 }
 
-func RegisterUserServer(gRPC *grpc.Server) {
-	authv1.RegisterUserServer(gRPC, &userServer{})
+func (us *userServer) GetUser(ctx context.Context, request *authv1.GetUserRequest) (*authv1.GetUserResponse, error) {
+	// TODO: validate
+
+	result, err := us.users.GetUser(ctx, commands.GetById{
+		ID: request.UserId,
+	})
+
+	if err != nil {
+		if errors.Is(err, authErrors.ErrUserNotFound) {
+			return nil, status.Error(codes.NotFound, "user with this id not found")
+		}
+
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+
+	return &authv1.GetUserResponse{
+		User: userDomainToPbModel(result.User),
+	}, nil
+}
+
+func (us *userServer) ChangePassword(ctx context.Context, request *authv1.ChangePasswordRequest) (*authv1.ChangePasswordResponse, error) {
+	// TODO: validate
+
+	err := us.users.ChangePassword(ctx, commands.ChangePassword{
+		ID:          request.UserId,
+		OldPassword: request.OldPassword,
+		NewPassword: request.NewPassword,
+	})
+
+	if err != nil {
+		if errors.Is(err, authErrors.ErrUserNotFound) {
+			return nil, status.Error(codes.NotFound, "user with this id not found")
+		}
+
+		if errors.Is(err, authErrors.ErrInvalidPassword) {
+			return nil, status.Error(codes.Unauthenticated, "invalid password")
+		}
+
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+
+	return &authv1.ChangePasswordResponse{}, nil
+}
+
+func (us *userServer) UpdateUser(ctx context.Context, request *authv1.UpdateUserRequest) (*authv1.UpdateUserResponse, error) {
+	// TODO: validate
+
+	result, err := us.users.UpdateUser(ctx, commands.Update{
+		ID:    request.UserId,
+		Login: request.Login,
+		Email: request.Email,
+	})
+
+	if err != nil {
+		if errors.Is(err, authErrors.ErrUserNotFound) {
+			return nil, status.Error(codes.NotFound, "user with this id not found")
+		}
+
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+
+	return &authv1.UpdateUserResponse{
+		User: userDomainToPbModel(result.User),
+	}, nil
+}
+
+func RegisterUserServer(gRPC *grpc.Server, users services.User) {
+	authv1.RegisterUserServer(gRPC, &userServer{users: users})
+}
+
+func userDomainToPbModel(user entities.User) *authv1.UserInfo {
+	return &authv1.UserInfo{
+		UserId:    user.ID,
+		Login:     user.Login,
+		Email:     user.Email,
+		Roles:     user.Roles,
+		IsAdmin:   user.IsAdmin(),
+		CreatedAt: timestamppb.New(user.CreatedAt),
+	}
 }

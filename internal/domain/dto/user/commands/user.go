@@ -20,8 +20,13 @@ type ChangePassword struct {
 	NewPassword string
 }
 
+type UpdatePassword struct {
+	ID              int64
+	NewPasswordHash string
+}
+
 type Update struct {
 	ID    int64
-	Login string
-	Email string
+	Login *string
+	Email *string
 }
