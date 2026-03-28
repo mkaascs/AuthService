@@ -10,9 +10,8 @@ import (
 	"auth-service/internal/domain/entities"
 	authErrors "auth-service/internal/domain/entities/errors"
 	"auth-service/internal/domain/interfaces/tx"
-	"auth-service/internal/lib/log"
 	"auth-service/internal/lib/refreshToken"
-	"auth-service/internal/mocks"
+	"auth-service/internal/testutil"
 	"context"
 	"errors"
 	"github.com/golang/mock/gomock"
@@ -23,15 +22,6 @@ import (
 
 func TestService_Refresh(t *testing.T) {
 	const TTL = 15 * time.Minute
-
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserRepo := mocks.NewMockUserRepo(ctrl)
-	mockTokenRepo := mocks.NewMockRefreshTokenRepo(ctrl)
-	mockAccessToken := mocks.NewMockAccessToken(ctrl)
-	mockTx := mocks.NewMockTx(ctrl)
-
 	cfg := config.AuthConfig{
 		AccessTokenTTL:  TTL,
 		RefreshTokenTTL: TTL,
@@ -39,31 +29,29 @@ func TestService_Refresh(t *testing.T) {
 	}
 
 	secret := []byte("LPKCsOO6CzbXjpFUGdgZ8EtQA+oULGU+faKC60aS1Qk=")
-	authService := New(ServiceArgs{
-		AccessTokens: mockAccessToken,
-		HmacSecret:   secret,
-		Config:       cfg,
-	}, RepoArgs{
-		UserRepo:  mockUserRepo,
-		TokenRepo: mockTokenRepo},
-		log.NewPlugLogger())
 
 	refreshCommand := commands.Refresh{
 		RefreshToken: "refresh-token",
 	}
 
 	t.Run("success", func(t *testing.T) {
-		mockTokenRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
 
-		mockTokenRepo.EXPECT().UpdateByTokenTx(gomock.Any(), mockTx, gomock.Any()).
+		mock := testutil.NewAuthMocks(t, ctrl)
+		svc := newTestService(mock, secret, cfg)
+
+		mock.TokenRepo.EXPECT().BeginTx(gomock.Any()).Return(mock.Tx, nil)
+
+		mock.TokenRepo.EXPECT().UpdateByTokenTx(gomock.Any(), mock.Tx, gomock.Any()).
 			DoAndReturn(func(ctx context.Context, tx tx.Tx, command tokenCommands.UpdateByToken) (*results.Update, error) {
 				refreshTokenHash := refreshToken.Hash(refreshCommand.RefreshToken, secret)
 				require.Equal(t, refreshTokenHash, command.RefreshTokenHash)
 				return &results.Update{UserID: 2}, nil
 			})
 
-		mockUserRepo.EXPECT().GetByIDTx(gomock.Any(), mockTx, gomock.Any()).
-			DoAndReturn(func(ctx context.Context, id int64) (*userResults.Get, error) {
+		mock.UserRepo.EXPECT().GetByIDTx(gomock.Any(), mock.Tx, gomock.Any()).
+			DoAndReturn(func(ctx context.Context, tx tx.Tx, id int64) (*userResults.Get, error) {
 				require.Equal(t, id, int64(2))
 				return &userResults.Get{
 					User: entities.User{
@@ -75,7 +63,7 @@ func TestService_Refresh(t *testing.T) {
 				}, nil
 			})
 
-		mockAccessToken.EXPECT().Generate(gomock.Any()).
+		mock.AccessToken.EXPECT().Generate(gomock.Any()).
 			DoAndReturn(func(command tokenCommands.Generate) (*jwtResults.Generate, error) {
 				require.Equal(t, command.UserID, int64(2))
 				require.Equal(t, command.Roles, []string{entities.RoleAdmin})
@@ -84,10 +72,10 @@ func TestService_Refresh(t *testing.T) {
 				}, nil
 			})
 
-		mockTx.EXPECT().Commit().Return(nil)
-		mockTx.EXPECT().Rollback().Return(nil)
+		mock.Tx.EXPECT().Commit().Return(nil)
+		mock.Tx.EXPECT().Rollback().Return(nil)
 
-		result, err := authService.Refresh(context.Background(), refreshCommand)
+		result, err := svc.Refresh(context.Background(), refreshCommand)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, result.Tokens.AccessToken, "access-token")
@@ -99,25 +87,37 @@ func TestService_Refresh(t *testing.T) {
 	})
 
 	t.Run("invalid refresh token", func(t *testing.T) {
-		mockTokenRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
 
-		mockTokenRepo.EXPECT().UpdateByTokenTx(gomock.Any(), mockTx, gomock.Any()).
+		mock := testutil.NewAuthMocks(t, ctrl)
+		svc := newTestService(mock, secret, cfg)
+
+		mock.TokenRepo.EXPECT().BeginTx(gomock.Any()).Return(mock.Tx, nil)
+
+		mock.TokenRepo.EXPECT().UpdateByTokenTx(gomock.Any(), mock.Tx, gomock.Any()).
 			Return(nil, authErrors.ErrInvalidRefreshToken)
 
-		mockTx.EXPECT().Rollback().Return(nil)
+		mock.Tx.EXPECT().Rollback().Return(nil)
 
-		result, err := authService.Refresh(context.Background(), refreshCommand)
+		result, err := svc.Refresh(context.Background(), refreshCommand)
 		require.Nil(t, result)
 		require.ErrorIs(t, err, authErrors.ErrInvalidRefreshToken)
 	})
 
-	t.Run("fail jwt generating", func(t *testing.T) {
-		mockTokenRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
+	t.Run("fail access token generating", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
 
-		mockTokenRepo.EXPECT().UpdateByTokenTx(gomock.Any(), mockTx, gomock.Any()).
+		mock := testutil.NewAuthMocks(t, ctrl)
+		svc := newTestService(mock, secret, cfg)
+
+		mock.TokenRepo.EXPECT().BeginTx(gomock.Any()).Return(mock.Tx, nil)
+
+		mock.TokenRepo.EXPECT().UpdateByTokenTx(gomock.Any(), mock.Tx, gomock.Any()).
 			Return(&results.Update{UserID: 2}, nil)
 
-		mockUserRepo.EXPECT().GetByIDTx(gomock.Any(), mockTx, gomock.Any()).
+		mock.UserRepo.EXPECT().GetByIDTx(gomock.Any(), mock.Tx, gomock.Any()).
 			Return(&userResults.Get{
 				User: entities.User{
 					ID:    2,
@@ -125,12 +125,12 @@ func TestService_Refresh(t *testing.T) {
 				},
 			}, nil)
 
-		mockAccessToken.EXPECT().Generate(gomock.Any()).
+		mock.AccessToken.EXPECT().Generate(gomock.Any()).
 			Return(nil, errors.New("incorrect format"))
 
-		mockTx.EXPECT().Rollback().Return(nil)
+		mock.Tx.EXPECT().Rollback().Return(nil)
 
-		result, err := authService.Refresh(context.Background(), refreshCommand)
+		result, err := svc.Refresh(context.Background(), refreshCommand)
 		require.Error(t, err)
 		require.Nil(t, result)
 	})

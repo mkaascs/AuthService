@@ -7,9 +7,8 @@ import (
 	"auth-service/internal/domain/dto/tokens/results"
 	authErrors "auth-service/internal/domain/entities/errors"
 	"auth-service/internal/domain/interfaces/tx"
-	"auth-service/internal/lib/log"
 	"auth-service/internal/lib/refreshToken"
-	"auth-service/internal/mocks"
+	"auth-service/internal/testutil"
 	"context"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -18,29 +17,14 @@ import (
 )
 
 func TestService_Logout(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserRepo := mocks.NewMockUserRepo(ctrl)
-	mockTokenRepo := mocks.NewMockRefreshTokenRepo(ctrl)
-	mockAccessToken := mocks.NewMockAccessToken(ctrl)
-	mockTx := mocks.NewMockTx(ctrl)
-
+	const TTL = 15 * time.Minute
 	cfg := config.AuthConfig{
-		AccessTokenTTL:  15 * time.Minute,
-		RefreshTokenTTL: 15 * time.Minute,
+		AccessTokenTTL:  TTL,
+		RefreshTokenTTL: TTL,
 		Issuer:          "test-auth",
 	}
 
 	secret := []byte("LPKCsOO6CzbXjpFUGdgZ8EtQA+oULGU+faKC60aS1Qk=")
-	authService := New(ServiceArgs{
-		AccessTokens: mockAccessToken,
-		HmacSecret:   secret,
-		Config:       cfg,
-	}, RepoArgs{
-		UserRepo:  mockUserRepo,
-		TokenRepo: mockTokenRepo},
-		log.NewPlugLogger())
 
 	logoutCommand := commands.Logout{
 		RefreshToken: "refresh-token",
@@ -62,9 +46,15 @@ func TestService_Logout(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockTokenRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
-			mockTokenRepo.EXPECT().DeleteByTokenTx(gomock.Any(), mockTx, gomock.Any()).
+			mock := testutil.NewAuthMocks(t, ctrl)
+			svc := newTestService(mock, secret, cfg)
+
+			mock.TokenRepo.EXPECT().BeginTx(gomock.Any()).Return(mock.Tx, nil)
+
+			mock.TokenRepo.EXPECT().DeleteByTokenTx(gomock.Any(), mock.Tx, gomock.Any()).
 				DoAndReturn(func(ctx context.Context, tx tx.Tx, command tokenCommands.DeleteByToken) (*results.Delete, error) {
 					refreshTokenHash := refreshToken.Hash(logoutCommand.RefreshToken, secret)
 					require.Equal(t, refreshTokenHash, command.RefreshTokenHash)
@@ -75,12 +65,12 @@ func TestService_Logout(t *testing.T) {
 					return &results.Delete{UserID: 1}, nil
 				})
 
-			mockTx.EXPECT().Rollback().Return(nil)
+			mock.Tx.EXPECT().Rollback().Return(nil)
 			if test.mockErr == nil {
-				mockTx.EXPECT().Commit().Return(nil)
+				mock.Tx.EXPECT().Commit().Return(nil)
 			}
 
-			err := authService.Logout(context.Background(), logoutCommand)
+			err := svc.Logout(context.Background(), logoutCommand)
 			if test.mockErr == nil {
 				require.NoError(t, err)
 				return

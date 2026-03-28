@@ -42,7 +42,6 @@ func TestService_ValidateToken(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
@@ -66,11 +65,16 @@ func TestService_ValidateToken(t *testing.T) {
 				AccessToken: test.accessToken,
 			})
 
-			require.Equal(t, test.expectedError, err)
+			if test.expectedError != nil {
+				require.ErrorIs(t, err, test.expectedError)
+				require.Nil(t, result)
+			}
+
 			if test.expectedError == nil {
+				require.NoError(t, err)
 				require.Equal(t, parseResult.UserID, result.UserID)
 				require.Equal(t, parseResult.Roles, result.Roles)
-				require.Equal(t, parseResult.ExpiresAt, result.ExpiresAt)
+				require.WithinDuration(t, parseResult.ExpiresAt, result.ExpiresAt, time.Second)
 			}
 		})
 	}

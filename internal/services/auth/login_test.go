@@ -10,29 +10,20 @@ import (
 	"auth-service/internal/domain/dto/user/results"
 	"auth-service/internal/domain/entities"
 	authErrors "auth-service/internal/domain/entities/errors"
+	"auth-service/internal/domain/interfaces/services"
 	"auth-service/internal/domain/interfaces/tx"
 	"auth-service/internal/lib/log"
-	"auth-service/internal/mocks"
+	"auth-service/internal/testutil"
 	"context"
 	"errors"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/crypto/bcrypt"
 	"testing"
 	"time"
 )
 
 func TestService_Login(t *testing.T) {
 	const TTL = 15 * time.Minute
-
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserRepo := mocks.NewMockUserRepo(ctrl)
-	mockTokenRepo := mocks.NewMockRefreshTokenRepo(ctrl)
-	mockAccessToken := mocks.NewMockAccessToken(ctrl)
-	mockTx := mocks.NewMockTx(ctrl)
-
 	cfg := config.AuthConfig{
 		AccessTokenTTL:  TTL,
 		RefreshTokenTTL: TTL,
@@ -40,28 +31,25 @@ func TestService_Login(t *testing.T) {
 	}
 
 	secret := []byte("LPKCsOO6CzbXjpFUGdgZ8EtQA+oULGU+faKC60aS1Qk=")
-	authService := New(ServiceArgs{
-		AccessTokens: mockAccessToken,
-		HmacSecret:   secret,
-		Config:       cfg,
-	}, RepoArgs{
-		UserRepo:  mockUserRepo,
-		TokenRepo: mockTokenRepo},
-		log.NewPlugLogger())
 
 	loginCommand := commands.Login{
 		Login:    "mkaascs",
 		Password: "password123",
 	}
 
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(loginCommand.Password), bcrypt.DefaultCost)
-	require.NoError(t, err)
+	passwordHash := testutil.HashPassword(t, loginCommand.Password)
 
 	t.Run("success", func(t *testing.T) {
-		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
 
-		mockUserRepo.EXPECT().GetByLoginTx(gomock.Any(), mockTx, gomock.Any()).
-			DoAndReturn(func(ctx context.Context, command userCommands.GetByLogin) (*results.Get, error) {
+		mock := testutil.NewAuthMocks(t, ctrl)
+		svc := newTestService(mock, secret, cfg)
+
+		mock.UserRepo.EXPECT().BeginTx(gomock.Any()).Return(mock.Tx, nil)
+
+		mock.UserRepo.EXPECT().GetByLoginTx(gomock.Any(), mock.Tx, gomock.Any()).
+			DoAndReturn(func(ctx context.Context, tx tx.Tx, command userCommands.GetByLogin) (*results.Get, error) {
 				require.Equal(t, loginCommand.Login, command.Login)
 				return &results.Get{
 					User: entities.User{
@@ -73,14 +61,14 @@ func TestService_Login(t *testing.T) {
 				}, nil
 			})
 
-		mockTokenRepo.EXPECT().UpdateByUserIDTx(gomock.Any(), mockTx, gomock.Any()).
+		mock.TokenRepo.EXPECT().UpdateByUserIDTx(gomock.Any(), mock.Tx, gomock.Any()).
 			DoAndReturn(func(ctx context.Context, tx tx.Tx, command tokenCommands.UpdateByUserID) (*tokenResults.Update, error) {
 				require.Equal(t, command.UserID, int64(2))
 				require.NotEmpty(t, command.NewRefreshTokenHash)
 				return &tokenResults.Update{UserID: 2}, nil
 			})
 
-		mockAccessToken.EXPECT().Generate(gomock.Any()).
+		mock.AccessToken.EXPECT().Generate(gomock.Any()).
 			DoAndReturn(func(command tokenCommands.Generate) (*jwtResults.Generate, error) {
 				require.Equal(t, command.UserID, int64(2))
 				require.Equal(t, command.Roles, []string{entities.RoleAdmin})
@@ -89,10 +77,10 @@ func TestService_Login(t *testing.T) {
 				}, nil
 			})
 
-		mockTx.EXPECT().Commit().Return(nil)
-		mockTx.EXPECT().Rollback().Return(nil)
+		mock.Tx.EXPECT().Commit().Return(nil)
+		mock.Tx.EXPECT().Rollback().Return(nil)
 
-		result, err := authService.Login(context.Background(), loginCommand)
+		result, err := svc.Login(context.Background(), loginCommand)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, "access-token", result.Tokens.AccessToken)
@@ -104,62 +92,90 @@ func TestService_Login(t *testing.T) {
 	})
 
 	t.Run("invalid password", func(t *testing.T) {
-		userPasswordHash, err := bcrypt.GenerateFromPassword([]byte("password12345"), bcrypt.DefaultCost)
-		require.NoError(t, err)
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
 
-		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
+		mock := testutil.NewAuthMocks(t, ctrl)
+		svc := newTestService(mock, secret, cfg)
 
-		mockUserRepo.EXPECT().GetByLoginTx(gomock.Any(), mockTx, gomock.Any()).
+		correctPasswordHash := testutil.HashPassword(t, "correct-password")
+
+		mock.UserRepo.EXPECT().BeginTx(gomock.Any()).Return(mock.Tx, nil)
+
+		mock.UserRepo.EXPECT().GetByLoginTx(gomock.Any(), mock.Tx, gomock.Any()).
 			Return(&results.Get{
 				User: entities.User{
 					ID:           2,
-					PasswordHash: string(userPasswordHash),
+					PasswordHash: correctPasswordHash,
 				},
 			}, nil)
 
-		mockTx.EXPECT().Rollback().Return(nil)
+		mock.Tx.EXPECT().Rollback().Return(nil)
 
-		result, err := authService.Login(context.Background(), loginCommand)
+		result, err := svc.Login(context.Background(), loginCommand)
 		require.ErrorIs(t, err, authErrors.ErrInvalidPassword)
 		require.Nil(t, result)
 	})
 
 	t.Run("invalid login", func(t *testing.T) {
-		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
 
-		mockUserRepo.EXPECT().GetByLoginTx(gomock.Any(), mockTx, gomock.Any()).
+		mock := testutil.NewAuthMocks(t, ctrl)
+		svc := newTestService(mock, secret, cfg)
+
+		mock.UserRepo.EXPECT().BeginTx(gomock.Any()).Return(mock.Tx, nil)
+
+		mock.UserRepo.EXPECT().GetByLoginTx(gomock.Any(), mock.Tx, gomock.Any()).
 			Return(nil, authErrors.ErrUserNotFound)
 
-		mockTx.EXPECT().Rollback().Return(nil)
+		mock.Tx.EXPECT().Rollback().Return(nil)
 
-		result, err := authService.Login(context.Background(), loginCommand)
+		result, err := svc.Login(context.Background(), loginCommand)
 		require.ErrorIs(t, err, authErrors.ErrUserNotFound)
 		require.Nil(t, result)
 	})
 
-	t.Run("fail jwt generating", func(t *testing.T) {
-		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
+	t.Run("fail access token generating", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
 
-		mockUserRepo.EXPECT().GetByLoginTx(gomock.Any(), mockTx, gomock.Any()).
+		mock := testutil.NewAuthMocks(t, ctrl)
+		svc := newTestService(mock, secret, cfg)
+
+		mock.UserRepo.EXPECT().BeginTx(gomock.Any()).Return(mock.Tx, nil)
+
+		mock.UserRepo.EXPECT().GetByLoginTx(gomock.Any(), mock.Tx, gomock.Any()).
 			Return(&results.Get{
 				User: entities.User{
 					ID:           2,
 					Login:        loginCommand.Login,
-					PasswordHash: string(passwordHash),
+					PasswordHash: passwordHash,
 					Roles:        []string{entities.RoleAdmin},
 				},
 			}, nil)
 
-		mockTokenRepo.EXPECT().UpdateByUserIDTx(gomock.Any(), mockTx, gomock.Any()).
+		mock.TokenRepo.EXPECT().UpdateByUserIDTx(gomock.Any(), mock.Tx, gomock.Any()).
 			Return(&tokenResults.Update{UserID: 2}, nil)
 
-		mockAccessToken.EXPECT().Generate(gomock.Any()).
+		mock.AccessToken.EXPECT().Generate(gomock.Any()).
 			Return(nil, errors.New("incorrect format"))
 
-		mockTx.EXPECT().Rollback().Return(nil)
+		mock.Tx.EXPECT().Rollback().Return(nil)
 
-		result, err := authService.Login(context.Background(), loginCommand)
+		result, err := svc.Login(context.Background(), loginCommand)
 		require.Nil(t, result)
 		require.Error(t, err)
 	})
+}
+
+func newTestService(mock *testutil.AuthMocks, secret []byte, cfg config.AuthConfig) services.Auth {
+	return New(ServiceArgs{
+		AccessTokens: mock.AccessToken,
+		HmacSecret:   secret,
+		Config:       cfg,
+	}, RepoArgs{
+		UserRepo:  mock.UserRepo,
+		TokenRepo: mock.TokenRepo,
+	}, log.NewPlugLogger())
 }
