@@ -57,7 +57,7 @@ func Load() (*Config, error) {
 	}
 
 	config.DbConnectionString = fmt.Sprintf(
-		"root:%s@tcp(%s)/URLShortener?charset=utf8&parseTime=True",
+		"root:%s@tcp(%s)/AuthService?charset=utf8&parseTime=True",
 		config.DbPassword,
 		config.DbHost)
 
@@ -71,10 +71,7 @@ func fetchConfigPath() string {
 	flag.Parse()
 
 	if path == "" {
-		if err := godotenv.Load(".env"); err != nil {
-			return ""
-		}
-
+		_ = godotenv.Load()
 		path = os.Getenv("CONFIG_PATH")
 	}
 

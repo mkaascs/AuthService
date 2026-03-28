@@ -13,3 +13,11 @@ tasks:
     desc: "Running all tests"
     cmds:
       - go test -v -coverprofile=coverage.out ./...
+  migrate:up:
+    desc: "Up db migrations"
+    cmds:
+      - go run ./cmd/migrate/main.go up
+  migrate:down:
+    desc: "Down db migrations"
+    cmds:
+      - go run ./cmd/migrate/main.go down

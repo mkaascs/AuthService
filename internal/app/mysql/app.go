@@ -74,13 +74,19 @@ func MustMigrate(logger *slog.Logger, connectionString string) {
 
 func Migrate(logger *slog.Logger, connectionString string) error {
 	const fn = "app.mysql.app.Migrate"
-	log := logger.With(slog.String("fn", fn))
+	log := logger.With(slog.String("fn", fn), slog.String("driver", "mysql"))
 
-	mgr, err := migrate.New("file://migrations", connectionString)
+	mgr, err := migrate.New("file://migrations", "mysql://"+connectionString)
 	if err != nil {
 		log.Error("failed to open migrations", sloglib.Error(err))
 		return fmt.Errorf("%s: failed to open migrations: %w", fn, err)
 	}
+
+	defer func(mgr *migrate.Migrate) {
+		if err, _ := mgr.Close(); err != nil {
+			log.Error("failed to close migrations", sloglib.Error(err))
+		}
+	}(mgr)
 
 	if err := mgr.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		log.Error("failed to run migrations", sloglib.Error(err))

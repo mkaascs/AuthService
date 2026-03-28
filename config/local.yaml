@@ -1,0 +1,9 @@
+env: "local" # prod, dev, local
+db_host: "127.0.0.1:3306"
+grpc:
+  port: 5505
+  timeout: 5s
+auth:
+  issuer: "auth-service"
+  access_token_ttl: 15m
+  refresh_token_ttl: 744h # 31 days
