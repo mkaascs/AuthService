@@ -22,9 +22,12 @@ func (s *service) Logout(ctx context.Context, command commands.Logout) error {
 		return fmt.Errorf("%s: failed to begin tx: %w", fn, err)
 	}
 
+	committed := false
 	defer func() {
-		if err := tx.Rollback(); err != nil {
-			log.Error("failed to rollback tx", sloglib.Error(err))
+		if !committed {
+			if err := tx.Rollback(); err != nil {
+				log.Error("failed to rollback tx", sloglib.Error(err))
+			}
 		}
 	}()
 
@@ -53,6 +56,8 @@ func (s *service) Logout(ctx context.Context, command commands.Logout) error {
 		log.Error("failed to commit tx", sloglib.Error(err))
 		return fmt.Errorf("%s: failed to commit tx: %w", fn, err)
 	}
+
+	committed = true
 
 	log.Info("user logged out successfully", slog.Int64("user_id", result.UserID))
 

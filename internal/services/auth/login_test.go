@@ -78,7 +78,7 @@ func TestService_Login(t *testing.T) {
 			})
 
 		mock.Tx.EXPECT().Commit().Return(nil)
-		mock.Tx.EXPECT().Rollback().Return(nil)
+		mock.Tx.EXPECT().Rollback().Return(nil).AnyTimes()
 
 		result, err := svc.Login(context.Background(), loginCommand)
 		require.NoError(t, err)

@@ -41,7 +41,7 @@ func TestService_UpdateUser(t *testing.T) {
 			})
 
 		mockTx.EXPECT().Commit().Return(nil)
-		mockTx.EXPECT().Rollback().Return(nil)
+		mockTx.EXPECT().Rollback().Return(nil).AnyTimes()
 
 		result, err := svc.UpdateUser(context.Background(), commands.Update{
 			ID:    1,
@@ -77,7 +77,7 @@ func TestService_UpdateUser(t *testing.T) {
 			})
 
 		mockTx.EXPECT().Commit().Return(nil)
-		mockTx.EXPECT().Rollback().Return(nil)
+		mockTx.EXPECT().Rollback().Return(nil).AnyTimes()
 
 		result, err := svc.UpdateUser(context.Background(), commands.Update{
 			ID:    1,
@@ -113,7 +113,7 @@ func TestService_UpdateUser(t *testing.T) {
 			})
 
 		mockTx.EXPECT().Commit().Return(nil)
-		mockTx.EXPECT().Rollback().Return(nil)
+		mockTx.EXPECT().Rollback().Return(nil).AnyTimes()
 
 		result, err := svc.UpdateUser(context.Background(), commands.Update{
 			ID:    1,

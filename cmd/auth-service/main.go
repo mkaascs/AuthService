@@ -20,6 +20,8 @@ func main() {
 	application := app.New(*cfg, logger)
 
 	application.MySql.MustConnect()
+	application.MustRegisterHandlers()
+
 	go application.GRPC.MustRun()
 
 	stop := make(chan os.Signal, 1)

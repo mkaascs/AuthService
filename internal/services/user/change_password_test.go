@@ -57,7 +57,7 @@ func TestService_ChangePassword(t *testing.T) {
 			})
 
 		mockTx.EXPECT().Commit().Return(nil)
-		mockTx.EXPECT().Rollback().Return(nil)
+		mockTx.EXPECT().Rollback().Return(nil).AnyTimes()
 
 		err := svc.ChangePassword(context.Background(), changePasswordCommand)
 		require.NoError(t, err)

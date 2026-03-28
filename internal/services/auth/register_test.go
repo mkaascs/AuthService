@@ -61,7 +61,7 @@ func TestService_Register(t *testing.T) {
 				return nil
 			})
 
-		mock.Tx.EXPECT().Rollback().Return(nil)
+		mock.Tx.EXPECT().Rollback().Return(nil).AnyTimes()
 		mock.Tx.EXPECT().Commit().Return(nil)
 
 		result, err := svc.Register(context.Background(), registerCommand)

@@ -10,7 +10,7 @@ import (
 )
 
 type App struct {
-	server *grpc.Server
+	Server *grpc.Server
 	port   int
 	logger *slog.Logger
 }
@@ -35,7 +35,7 @@ func (a *App) Run() error {
 
 	log.Info("grpc server is running", slog.Int("port", a.port))
 
-	if err := a.server.Serve(listener); err != nil {
+	if err := a.Server.Serve(listener); err != nil {
 		log.Error("failed to serve", sloglib.Error(err))
 		return fmt.Errorf("%s: failed to serve: %w", fn, err)
 	}
@@ -49,14 +49,14 @@ func (a *App) Stop() {
 
 	log.Info("grpc server is stopping", slog.Int("port", a.port))
 
-	a.server.GracefulStop()
+	a.Server.GracefulStop()
 }
 
 func New(logger *slog.Logger, port int) *App {
 	server := grpc.NewServer()
 
 	return &App{
-		server: server,
+		Server: server,
 		port:   port,
 		logger: logger,
 	}

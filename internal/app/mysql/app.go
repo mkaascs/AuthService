@@ -14,7 +14,7 @@ import (
 )
 
 type App struct {
-	db     *sql.DB
+	DB     *sql.DB
 	logger *slog.Logger
 }
 
@@ -29,7 +29,7 @@ func New(logger *slog.Logger, connectionString string) (*App, error) {
 	}
 
 	return &App{
-		db:     db,
+		DB:     db,
 		logger: logger,
 	}, err
 }
@@ -44,7 +44,7 @@ func (a *App) Connect() error {
 	const fn = "app.mysql.app.Connect"
 	log := a.logger.With(slog.String("fn", fn), slog.String("driver", "mysql"))
 
-	if err := a.db.Ping(); err != nil {
+	if err := a.DB.Ping(); err != nil {
 		log.Error("failed to ping database connection", sloglib.Error(err))
 		return fmt.Errorf("%s: failed to ping database connection: %w", fn, err)
 	}
@@ -57,7 +57,7 @@ func (a *App) Close() error {
 	const fn = "app.mysql.app.Close"
 	log := a.logger.With(slog.String("fn", fn), slog.String("driver", "mysql"))
 
-	if err := a.db.Close(); err != nil {
+	if err := a.DB.Close(); err != nil {
 		log.Error("failed to close database", sloglib.Error(err))
 		return fmt.Errorf("%s: failed to close database connection: %w", fn, err)
 	}

@@ -5,10 +5,16 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
+	"log"
 )
 
 func Generate() string {
-	token, _ := rand.GenerateSecureToken(32)
+	token, err := rand.GenerateSecureToken(32)
+	if err != nil {
+		log.Fatal(fmt.Errorf("error generating token: %w", err))
+	}
+
 	return token
 }
 

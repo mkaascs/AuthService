@@ -21,9 +21,12 @@ func (s *service) ChangePassword(ctx context.Context, command commands.ChangePas
 		return fmt.Errorf("%s: failed to begin tx: %w", fn, err)
 	}
 
+	committed := false
 	defer func() {
-		if err := tx.Rollback(); err != nil {
-			log.Error("failed to rollback tx", sloglib.Error(err))
+		if !committed {
+			if err := tx.Rollback(); err != nil {
+				log.Error("failed to rollback tx", sloglib.Error(err))
+			}
 		}
 	}()
 
@@ -76,6 +79,8 @@ func (s *service) ChangePassword(ctx context.Context, command commands.ChangePas
 		log.Error("failed to commit tx", sloglib.Error(err))
 		return fmt.Errorf("%s: failed to commit tx: %w", fn, err)
 	}
+
+	committed = true
 
 	log.Info("successfully changed user password", slog.Int64("user_id", command.ID))
 

@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"time"
 )
 
@@ -39,6 +40,14 @@ func (as *authServer) Login(ctx context.Context, request *authv1.LoginRequest) (
 		AccessToken:  result.Tokens.AccessToken,
 		RefreshToken: result.Tokens.RefreshToken,
 		ExpiresIn:    int64(result.ExpiresIn / time.Second),
+		User: &authv1.UserInfo{
+			UserId:    result.User.ID,
+			Login:     result.User.Login,
+			Email:     result.User.Email,
+			Roles:     result.User.Roles,
+			IsAdmin:   result.User.IsAdmin(),
+			CreatedAt: timestamppb.New(result.User.CreatedAt),
+		},
 	}, nil
 }
 

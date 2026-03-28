@@ -21,12 +21,6 @@ func (s *service) GetUser(ctx context.Context, command commands.GetById) (*resul
 		return nil, fmt.Errorf("%s: failed to begin tx: %w", fn, err)
 	}
 
-	defer func() {
-		if err := tx.Rollback(); err != nil {
-			log.Error("failed to rollback tx", sloglib.Error(err))
-		}
-	}()
-
 	result, err := s.userRepo.GetByIDTx(ctx, tx, command.ID)
 	if err != nil {
 		const msg = "failed to get user"

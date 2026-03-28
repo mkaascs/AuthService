@@ -65,7 +65,7 @@ func TestService_Logout(t *testing.T) {
 					return &results.Delete{UserID: 1}, nil
 				})
 
-			mock.Tx.EXPECT().Rollback().Return(nil)
+			mock.Tx.EXPECT().Rollback().Return(nil).AnyTimes()
 			if test.mockErr == nil {
 				mock.Tx.EXPECT().Commit().Return(nil)
 			}

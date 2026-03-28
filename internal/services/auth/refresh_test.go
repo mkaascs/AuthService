@@ -73,7 +73,7 @@ func TestService_Refresh(t *testing.T) {
 			})
 
 		mock.Tx.EXPECT().Commit().Return(nil)
-		mock.Tx.EXPECT().Rollback().Return(nil)
+		mock.Tx.EXPECT().Rollback().Return(nil).AnyTimes()
 
 		result, err := svc.Refresh(context.Background(), refreshCommand)
 		require.NoError(t, err)

@@ -26,9 +26,12 @@ func (s *service) Login(ctx context.Context, command commands.Login) (*results.L
 		return nil, fmt.Errorf("%s: failed to begin tx: %w", fn, err)
 	}
 
+	committed := false
 	defer func() {
-		if err := tx.Rollback(); err != nil {
-			log.Error("failed to rollback tx", sloglib.Error(err))
+		if !committed {
+			if err := tx.Rollback(); err != nil {
+				log.Error("failed to rollback tx", sloglib.Error(err))
+			}
 		}
 	}()
 
@@ -58,6 +61,7 @@ func (s *service) Login(ctx context.Context, command commands.Login) (*results.L
 		return nil, authErrors.ErrInvalidPassword
 	}
 
+	// TODO: bugfix: update deleted refresh token
 	newRefreshToken := refreshToken.Generate()
 	_, err = s.tokenRepo.UpdateByUserIDTx(ctx, tx, tokenCommands.UpdateByUserID{
 		UserID:              result.User.ID,
@@ -89,6 +93,8 @@ func (s *service) Login(ctx context.Context, command commands.Login) (*results.L
 		log.Error("failed to commit tx", sloglib.Error(err))
 		return nil, fmt.Errorf("%s: failed to commit tx: %w", fn, err)
 	}
+
+	committed = true
 
 	log.Info("user successfully logged in", slog.Int64("user_id", result.User.ID))
 

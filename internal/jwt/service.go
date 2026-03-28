@@ -3,8 +3,8 @@ package jwt
 import (
 	"auth-service/internal/config"
 	"auth-service/internal/domain/interfaces/services"
+	"encoding/base64"
 	"fmt"
-	"github.com/joho/godotenv"
 	"os"
 )
 
@@ -14,12 +14,8 @@ type service struct {
 }
 
 func New(config config.AuthConfig) (services.AccessToken, error) {
-	if err := godotenv.Load(); err != nil {
-		return nil, fmt.Errorf("failed to load .env file: %w", err)
-	}
-
-	secret := []byte(os.Getenv("JWT_SECRET_BASE64"))
-	if secret == nil {
+	secret, err := base64.StdEncoding.DecodeString(os.Getenv("JWT_SECRET_BASE64"))
+	if err != nil || len(secret) == 0 {
 		return nil, fmt.Errorf("failed to load JWT_SECRET_BASE64")
 	}
 
