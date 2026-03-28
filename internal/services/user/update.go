@@ -29,13 +29,19 @@ func (s *service) UpdateUser(ctx context.Context, command commands.Update) (*res
 
 	result, err := s.userRepo.UpdateTx(ctx, tx, command)
 	if err != nil {
+		const msg = "failed to update user"
 		if errors.Is(err, authErrors.ErrUserNotFound) {
-			log.Info("failed to update user", sloglib.Error(err))
+			log.Info(msg, sloglib.Error(err))
 			return nil, authErrors.ErrUserNotFound
 		}
 
-		log.Error("failed to update user", sloglib.Error(err))
-		return nil, fmt.Errorf("%s: failed to update user: %w", fn, err)
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			log.Info(msg, sloglib.Error(err))
+			return nil, ctx.Err()
+		}
+
+		log.Error(msg, sloglib.Error(err))
+		return nil, fmt.Errorf("%s: %s: %w", fn, msg, err)
 	}
 
 	return result, nil

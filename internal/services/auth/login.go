@@ -37,13 +37,19 @@ func (s *service) Login(ctx context.Context, command commands.Login) (*results.L
 	})
 
 	if err != nil {
+		const msg = "failed to get user by login"
 		if errors.Is(err, authErrors.ErrUserNotFound) {
-			log.Info("failed to get user by login", sloglib.Error(err))
+			log.Info(msg, sloglib.Error(err))
 			return nil, authErrors.ErrUserNotFound
 		}
 
-		log.Error("failed to get user by login", sloglib.Error(err))
-		return nil, fmt.Errorf("%s: failed to get user by login: %w", fn, err)
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			log.Info(msg, sloglib.Error(err))
+			return nil, ctx.Err()
+		}
+
+		log.Error(msg, sloglib.Error(err))
+		return nil, fmt.Errorf("%s: %s: %w", fn, msg, err)
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(result.User.PasswordHash), []byte(command.Password))
@@ -59,8 +65,14 @@ func (s *service) Login(ctx context.Context, command commands.Login) (*results.L
 	})
 
 	if err != nil {
-		log.Error("failed to update refresh token", sloglib.Error(err))
-		return nil, fmt.Errorf("%s: failed to update refresh token: %w", fn, err)
+		const msg = "failed to update refresh token"
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			log.Info(msg, sloglib.Error(err))
+			return nil, ctx.Err()
+		}
+
+		log.Error(msg, sloglib.Error(err))
+		return nil, fmt.Errorf("%s: %s: %w", fn, msg, err)
 	}
 
 	accessToken, err := s.accessTokens.Generate(tokenCommands.Generate{

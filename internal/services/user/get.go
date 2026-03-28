@@ -29,13 +29,19 @@ func (s *service) GetUser(ctx context.Context, command commands.GetById) (*resul
 
 	result, err := s.userRepo.GetByIDTx(ctx, tx, command.ID)
 	if err != nil {
+		const msg = "failed to get user"
 		if errors.Is(err, authErrors.ErrUserNotFound) {
-			log.Info("failed to get user by id", sloglib.Error(err))
+			log.Info(msg, sloglib.Error(err))
 			return nil, authErrors.ErrUserNotFound
 		}
 
-		log.Error("failed to get user by id", sloglib.Error(err))
-		return nil, fmt.Errorf("%s: failed to get user by id: %w", fn, err)
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			log.Info(msg, sloglib.Error(err))
+			return nil, ctx.Err()
+		}
+
+		log.Error(msg, sloglib.Error(err))
+		return nil, fmt.Errorf("%s: %s: %w", fn, msg, err)
 	}
 
 	log.Info("user info received successfully", slog.Int64("user_id", command.ID))

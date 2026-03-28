@@ -34,13 +34,19 @@ func (s *service) Logout(ctx context.Context, command commands.Logout) error {
 	})
 
 	if err != nil {
+		const msg = "failed to delete refresh token"
 		if errors.Is(err, authErrors.ErrInvalidRefreshToken) {
-			log.Info("failed to delete refresh token", sloglib.Error(err))
+			log.Info(msg, sloglib.Error(err))
 			return authErrors.ErrInvalidRefreshToken
 		}
 
-		log.Error("failed to delete refresh token", sloglib.Error(err))
-		return fmt.Errorf("%s: failed to delete refresh token: %v", fn, err)
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			log.Info(msg, sloglib.Error(err))
+			return ctx.Err()
+		}
+
+		log.Error(msg, sloglib.Error(err))
+		return fmt.Errorf("%s: %s: %w", fn, msg, err)
 	}
 
 	if err := tx.Commit(); err != nil {

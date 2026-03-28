@@ -20,13 +20,14 @@ func (s *service) ValidateToken(_ context.Context, command commands.Validate) (*
 	})
 
 	if err != nil {
+		const msg = "failed to parse access token"
 		if errors.Is(err, authErrors.ErrInvalidAccessToken) || errors.Is(err, authErrors.ErrAccessTokenExpired) {
-			log.Info("failed to parse access token", sloglib.Error(err))
+			log.Info(msg, sloglib.Error(err))
 			return nil, err
 		}
 
-		log.Error("failed to parse access token", sloglib.Error(err))
-		return nil, fmt.Errorf("%s: failed to parse access token: %w", fn, err)
+		log.Error(msg, sloglib.Error(err))
+		return nil, fmt.Errorf("%s: %s: %w", fn, msg, err)
 	}
 
 	return &results.Validate{

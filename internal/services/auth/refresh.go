@@ -38,19 +38,31 @@ func (s *service) Refresh(ctx context.Context, command commands.Refresh) (*resul
 	})
 
 	if err != nil {
+		const msg = "failed to update refresh token"
 		if errors.Is(err, authErrors.ErrInvalidRefreshToken) {
-			log.Info("failed to update refresh token", sloglib.Error(err))
+			log.Info(msg, sloglib.Error(err))
 			return nil, authErrors.ErrInvalidRefreshToken
 		}
 
-		log.Error("failed to update refresh token", sloglib.Error(err))
-		return nil, fmt.Errorf("%s: failed to update refresh token: %w", fn, err)
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			log.Info(msg, sloglib.Error(err))
+			return nil, ctx.Err()
+		}
+
+		log.Error(msg, sloglib.Error(err))
+		return nil, fmt.Errorf("%s: %s: %w", fn, msg, err)
 	}
 
 	user, err := s.userRepo.GetByIDTx(ctx, tx, result.UserID)
 	if err != nil {
-		log.Error("failed to get user", sloglib.Error(err))
-		return nil, fmt.Errorf("%s: failed to get user: %w", fn, err)
+		const msg = "failed to get user"
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			log.Info(msg, sloglib.Error(err))
+			return nil, ctx.Err()
+		}
+
+		log.Error(msg, sloglib.Error(err))
+		return nil, fmt.Errorf("%s: %s: %w", fn, msg, err)
 	}
 
 	accessToken, err := s.accessTokens.Generate(tokenCommands.Generate{

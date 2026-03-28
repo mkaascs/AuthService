@@ -50,13 +50,19 @@ func (s *service) Register(ctx context.Context, command commands.Register) (*res
 	})
 
 	if err != nil {
+		const msg = "failed to add user"
 		if errors.Is(err, authErrors.ErrUserAlreadyExists) {
-			log.Info("failed to add user", sloglib.Error(err))
+			log.Info(msg, sloglib.Error(err))
 			return nil, authErrors.ErrUserAlreadyExists
 		}
 
-		log.Error("failed to add user", sloglib.Error(err))
-		return nil, fmt.Errorf("%s: failed to add user: %w", fn, err)
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			log.Info(msg, sloglib.Error(err))
+			return nil, ctx.Err()
+		}
+
+		log.Error(msg, sloglib.Error(err))
+		return nil, fmt.Errorf("%s: %s: %w", fn, msg, err)
 	}
 
 	refreshTokenHash := refreshToken.Hash(refreshToken.Generate(), s.hmacSecret)
@@ -68,13 +74,19 @@ func (s *service) Register(ctx context.Context, command commands.Register) (*res
 	})
 
 	if err != nil {
+		const msg = "failed to add refresh token"
 		if errors.Is(err, authErrors.ErrRefreshTokenAlreadyExists) {
-			log.Warn("failed to add refresh token", sloglib.Error(err))
+			log.Warn(msg, sloglib.Error(err))
 			return nil, authErrors.ErrRefreshTokenAlreadyExists
 		}
 
-		log.Error("failed to add refresh token", sloglib.Error(err))
-		return nil, fmt.Errorf("%s: failed to add refresh token: %w", fn, err)
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			log.Info(msg, sloglib.Error(err))
+			return nil, ctx.Err()
+		}
+
+		log.Error(msg, sloglib.Error(err))
+		return nil, fmt.Errorf("%s: %s: %w", fn, msg, err)
 	}
 
 	if err = tx.Commit(); err != nil {

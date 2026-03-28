@@ -29,13 +29,19 @@ func (s *service) ChangePassword(ctx context.Context, command commands.ChangePas
 
 	user, err := s.userRepo.GetByIDTx(ctx, tx, command.ID)
 	if err != nil {
+		const msg = "failed to get user"
 		if errors.Is(err, authErrors.ErrUserNotFound) {
-			log.Info("failed to get user", sloglib.Error(err))
+			log.Info(msg, sloglib.Error(err))
 			return authErrors.ErrUserNotFound
 		}
 
-		log.Error("failed to get user", sloglib.Error(err))
-		return fmt.Errorf("%s: failed to get user: %w", fn, err)
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			log.Info(msg, sloglib.Error(err))
+			return ctx.Err()
+		}
+
+		log.Error(msg, sloglib.Error(err))
+		return fmt.Errorf("%s: %s: %w", fn, msg, err)
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.User.PasswordHash), []byte(command.OldPassword))
@@ -56,8 +62,14 @@ func (s *service) ChangePassword(ctx context.Context, command commands.ChangePas
 	})
 
 	if err != nil {
-		log.Error("failed to change user password", sloglib.Error(err))
-		return fmt.Errorf("%s: failed to change user password: %w", fn, err)
+		const msg = "failed to update password"
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			log.Info(msg, sloglib.Error(err))
+			return ctx.Err()
+		}
+
+		log.Error(msg, sloglib.Error(err))
+		return fmt.Errorf("%s: %s: %w", fn, msg, err)
 	}
 
 	if err := tx.Commit(); err != nil {
