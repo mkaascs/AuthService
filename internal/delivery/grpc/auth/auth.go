@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"auth-service/internal/delivery/grpc/util"
 	"auth-service/internal/domain/dto/auth/commands"
 	authErrors "auth-service/internal/domain/entities/errors"
 	"auth-service/internal/domain/interfaces/services"
@@ -31,7 +32,7 @@ func (as *authServer) Login(ctx context.Context, request *authv1.LoginRequest) (
 			return nil, status.Error(codes.Unauthenticated, "invalid login or password")
 		}
 
-		return nil, status.Error(codes.Internal, "internal server error")
+		return nil, util.MapError(err)
 	}
 
 	return &authv1.LoginResponse{
@@ -49,11 +50,7 @@ func (as *authServer) Refresh(ctx context.Context, request *authv1.RefreshReques
 	})
 
 	if err != nil {
-		if errors.Is(err, authErrors.ErrInvalidRefreshToken) {
-			return nil, status.Error(codes.Unauthenticated, "invalid refresh token")
-		}
-
-		return nil, status.Error(codes.Internal, "internal server error")
+		return nil, util.MapError(err)
 	}
 
 	return &authv1.RefreshResponse{
@@ -73,11 +70,7 @@ func (as *authServer) Register(ctx context.Context, request *authv1.RegisterRequ
 	})
 
 	if err != nil {
-		if errors.Is(err, authErrors.ErrUserAlreadyExists) {
-			return nil, status.Error(codes.AlreadyExists, "user with this login already exists")
-		}
-
-		return nil, status.Error(codes.Internal, "internal server error")
+		return nil, util.MapError(err)
 	}
 
 	return &authv1.RegisterResponse{
@@ -93,11 +86,7 @@ func (as *authServer) Logout(ctx context.Context, request *authv1.LogoutRequest)
 	})
 
 	if err != nil {
-		if errors.Is(err, authErrors.ErrInvalidRefreshToken) {
-			return nil, status.Error(codes.Unauthenticated, "invalid refresh token")
-		}
-
-		return nil, status.Error(codes.Internal, "internal server error")
+		return nil, util.MapError(err)
 	}
 
 	return &authv1.LogoutResponse{}, nil

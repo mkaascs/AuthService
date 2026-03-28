@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"auth-service/internal/delivery/grpc/util"
 	"auth-service/internal/domain/dto/tokens/commands"
 	authErrors "auth-service/internal/domain/entities/errors"
 	"auth-service/internal/domain/interfaces/services"
@@ -8,8 +9,6 @@ import (
 	"errors"
 	authv1 "github.com/mkaascs/AuthProto/gen/go/auth"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type tokenServer struct {
@@ -37,7 +36,7 @@ func (ts *tokenServer) ValidateToken(ctx context.Context, request *authv1.Valida
 			}, nil
 		}
 
-		return nil, status.Error(codes.Internal, "internal server error")
+		return nil, util.MapError(err)
 	}
 
 	return &authv1.ValidateTokenResponse{

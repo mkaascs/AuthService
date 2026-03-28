@@ -1,16 +1,13 @@
 package auth
 
 import (
+	"auth-service/internal/delivery/grpc/util"
 	"auth-service/internal/domain/dto/user/commands"
 	"auth-service/internal/domain/entities"
-	authErrors "auth-service/internal/domain/entities/errors"
 	"auth-service/internal/domain/interfaces/services"
 	"context"
-	"errors"
 	authv1 "github.com/mkaascs/AuthProto/gen/go/auth"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -27,11 +24,7 @@ func (us *userServer) GetUser(ctx context.Context, request *authv1.GetUserReques
 	})
 
 	if err != nil {
-		if errors.Is(err, authErrors.ErrUserNotFound) {
-			return nil, status.Error(codes.NotFound, "user with this id not found")
-		}
-
-		return nil, status.Error(codes.Internal, "internal server error")
+		return nil, util.MapError(err)
 	}
 
 	return &authv1.GetUserResponse{
@@ -49,15 +42,7 @@ func (us *userServer) ChangePassword(ctx context.Context, request *authv1.Change
 	})
 
 	if err != nil {
-		if errors.Is(err, authErrors.ErrUserNotFound) {
-			return nil, status.Error(codes.NotFound, "user with this id not found")
-		}
-
-		if errors.Is(err, authErrors.ErrInvalidPassword) {
-			return nil, status.Error(codes.Unauthenticated, "invalid password")
-		}
-
-		return nil, status.Error(codes.Internal, "internal server error")
+		return nil, util.MapError(err)
 	}
 
 	return &authv1.ChangePasswordResponse{}, nil
@@ -73,11 +58,7 @@ func (us *userServer) UpdateUser(ctx context.Context, request *authv1.UpdateUser
 	})
 
 	if err != nil {
-		if errors.Is(err, authErrors.ErrUserNotFound) {
-			return nil, status.Error(codes.NotFound, "user with this id not found")
-		}
-
-		return nil, status.Error(codes.Internal, "internal server error")
+		return nil, util.MapError(err)
 	}
 
 	return &authv1.UpdateUserResponse{
