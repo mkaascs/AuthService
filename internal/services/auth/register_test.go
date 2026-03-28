@@ -110,4 +110,53 @@ func TestService_Register(t *testing.T) {
 		require.Error(t, err)
 		require.Nil(t, result)
 	})
+
+	t.Run("context canceled on add user", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mock := testutil.NewAuthMocks(t, ctrl)
+		svc := newTestService(mock, secret, cfg)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		mock.UserRepo.EXPECT().BeginTx(gomock.Any()).Return(mock.Tx, nil)
+
+		mock.UserRepo.EXPECT().AddTx(gomock.Any(), mock.Tx, gomock.Any()).
+			Return(nil, context.Canceled)
+
+		mock.Tx.EXPECT().Rollback().Return(nil)
+
+		result, err := svc.Register(ctx, registerCommand)
+		require.Nil(t, result)
+		require.ErrorIs(t, err, context.Canceled)
+	})
+
+	t.Run("context canceled on add token", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mock := testutil.NewAuthMocks(t, ctrl)
+		svc := newTestService(mock, secret, cfg)
+
+		ctx, cancel := context.WithCancel(context.Background())
+
+		mock.UserRepo.EXPECT().BeginTx(gomock.Any()).Return(mock.Tx, nil)
+
+		mock.UserRepo.EXPECT().AddTx(gomock.Any(), mock.Tx, gomock.Any()).
+			DoAndReturn(func(ctx context.Context, tx tx.Tx, command userCommands.Add) (*results.Add, error) {
+				cancel()
+				return &results.Add{UserID: 2}, nil
+			})
+
+		mock.TokenRepo.EXPECT().AddTx(gomock.Any(), mock.Tx, gomock.Any()).
+			Return(context.Canceled)
+
+		mock.Tx.EXPECT().Rollback().Return(nil)
+
+		result, err := svc.Register(ctx, registerCommand)
+		require.Nil(t, result)
+		require.ErrorIs(t, err, context.Canceled)
+	})
 }

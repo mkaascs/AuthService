@@ -79,4 +79,25 @@ func TestService_Logout(t *testing.T) {
 			require.ErrorIs(t, err, test.mockErr)
 		})
 	}
+
+	t.Run("context canceled", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mock := testutil.NewAuthMocks(t, ctrl)
+		svc := newTestService(mock, secret, cfg)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		mock.TokenRepo.EXPECT().BeginTx(gomock.Any()).Return(mock.Tx, nil)
+
+		mock.TokenRepo.EXPECT().DeleteByTokenTx(gomock.Any(), mock.Tx, gomock.Any()).
+			Return(nil, context.Canceled)
+
+		mock.Tx.EXPECT().Rollback().Return(nil)
+
+		err := svc.Logout(ctx, logoutCommand)
+		require.ErrorIs(t, err, context.Canceled)
+	})
 }

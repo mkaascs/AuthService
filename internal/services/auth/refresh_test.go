@@ -134,4 +134,53 @@ func TestService_Refresh(t *testing.T) {
 		require.Error(t, err)
 		require.Nil(t, result)
 	})
+
+	t.Run("context canceled on update token", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mock := testutil.NewAuthMocks(t, ctrl)
+		svc := newTestService(mock, secret, cfg)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		mock.TokenRepo.EXPECT().BeginTx(gomock.Any()).Return(mock.Tx, nil)
+
+		mock.TokenRepo.EXPECT().UpdateByTokenTx(gomock.Any(), mock.Tx, gomock.Any()).
+			Return(nil, context.Canceled)
+
+		mock.Tx.EXPECT().Rollback().Return(nil)
+
+		result, err := svc.Refresh(ctx, refreshCommand)
+		require.Nil(t, result)
+		require.ErrorIs(t, err, context.Canceled)
+	})
+
+	t.Run("context canceled on get user", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mock := testutil.NewAuthMocks(t, ctrl)
+		svc := newTestService(mock, secret, cfg)
+
+		ctx, cancel := context.WithCancel(context.Background())
+
+		mock.TokenRepo.EXPECT().BeginTx(gomock.Any()).Return(mock.Tx, nil)
+
+		mock.TokenRepo.EXPECT().UpdateByTokenTx(gomock.Any(), mock.Tx, gomock.Any()).
+			DoAndReturn(func(ctx context.Context, tx tx.Tx, command tokenCommands.UpdateByToken) (*results.Update, error) {
+				cancel()
+				return &results.Update{UserID: 2}, nil
+			})
+
+		mock.UserRepo.EXPECT().GetByIDTx(gomock.Any(), mock.Tx, gomock.Any()).
+			Return(nil, context.Canceled)
+
+		mock.Tx.EXPECT().Rollback().Return(nil)
+
+		result, err := svc.Refresh(ctx, refreshCommand)
+		require.Nil(t, result)
+		require.ErrorIs(t, err, context.Canceled)
+	})
 }
