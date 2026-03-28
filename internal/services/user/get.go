@@ -18,7 +18,7 @@ func (s *service) GetUser(ctx context.Context, command commands.GetById) (*resul
 	tx, err := s.userRepo.BeginTx(ctx)
 	if err != nil {
 		log.Error("failed to begin tx", sloglib.Error(err))
-		return nil, err
+		return nil, fmt.Errorf("%s: failed to begin tx: %w", fn, err)
 	}
 
 	defer func() {

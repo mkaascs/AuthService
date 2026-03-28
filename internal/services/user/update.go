@@ -44,5 +44,10 @@ func (s *service) UpdateUser(ctx context.Context, command commands.Update) (*res
 		return nil, fmt.Errorf("%s: %s: %w", fn, msg, err)
 	}
 
+	if err := tx.Commit(); err != nil {
+		log.Error("failed to commit tx", sloglib.Error(err))
+		return nil, fmt.Errorf("%s: failed to commit tx: %w", fn, err)
+	}
+
 	return result, nil
 }
