@@ -3,8 +3,12 @@ package mysql
 import (
 	sloglib "auth-service/internal/lib/log/slog"
 	"database/sql"
+	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/mysql"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"log/slog"
 	"os"
 )
@@ -14,9 +18,24 @@ type App struct {
 	logger *slog.Logger
 }
 
+func New(logger *slog.Logger, connectionString string) (*App, error) {
+	const fn = "app.mysql.app.New"
+	log := logger.With(slog.String("fn", fn), slog.String("driver", "mysql"))
+
+	db, err := sql.Open("mysql", connectionString)
+	if err != nil {
+		log.Error("failed to open database connection", sloglib.Error(err))
+		return nil, fmt.Errorf("%s: failed to open database connection: %w", fn, err)
+	}
+
+	return &App{
+		db:     db,
+		logger: logger,
+	}, err
+}
+
 func (a *App) MustConnect() {
 	if err := a.Connect(); err != nil {
-		a.logger.Error("failed to connect mysql app", sloglib.Error(err))
 		os.Exit(1)
 	}
 }
@@ -47,18 +66,27 @@ func (a *App) Close() error {
 	return nil
 }
 
-func New(logger *slog.Logger, connectionString string) (*App, error) {
-	const fn = "app.mysql.app.New"
-	log := logger.With(slog.String("fn", fn), slog.String("driver", "mysql"))
+func MustMigrate(logger *slog.Logger, connectionString string) {
+	if err := Migrate(logger, connectionString); err != nil {
+		os.Exit(1)
+	}
+}
 
-	db, err := sql.Open("mysql", connectionString)
+func Migrate(logger *slog.Logger, connectionString string) error {
+	const fn = "app.mysql.app.Migrate"
+	log := logger.With(slog.String("fn", fn))
+
+	mgr, err := migrate.New("file://migrations", connectionString)
 	if err != nil {
-		log.Error("failed to open database connection", sloglib.Error(err))
-		return nil, fmt.Errorf("%s: failed to open database connection: %w", fn, err)
+		log.Error("failed to open migrations", sloglib.Error(err))
+		return fmt.Errorf("%s: failed to open migrations: %w", fn, err)
 	}
 
-	return &App{
-		db:     db,
-		logger: logger,
-	}, err
+	if err := mgr.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		log.Error("failed to run migrations", sloglib.Error(err))
+		return fmt.Errorf("%s: failed to run migrations: %w", fn, err)
+	}
+
+	log.Info("successfully migrated database")
+	return nil
 }
