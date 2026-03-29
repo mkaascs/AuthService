@@ -56,7 +56,7 @@ func (rtr *RefreshTokenRepo) UpdateByTokenTx(ctx context.Context, tx tx.Tx, comm
 	}
 
 	var userID int64
-	err := sqlTx.QueryRowContext(ctx, `SELECT user_id FROM refresh_tokens WHERE refresh_token_hash = ?`,
+	err := sqlTx.QueryRowContext(ctx, `SELECT user_id FROM refresh_tokens WHERE refresh_token_hash = ? AND expires_at > NOW()`,
 		command.RefreshTokenHash,
 	).Scan(&userID)
 
