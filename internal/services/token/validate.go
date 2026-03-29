@@ -30,6 +30,8 @@ func (s *service) ValidateToken(_ context.Context, command commands.Validate) (*
 		return nil, fmt.Errorf("%s: %s: %w", fn, msg, err)
 	}
 
+	log.Info("access token validated successfully", slog.Int64("user_id", result.UserID))
+
 	return &results.Validate{
 		UserID:    result.UserID,
 		Roles:     result.Roles,

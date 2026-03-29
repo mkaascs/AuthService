@@ -54,5 +54,7 @@ func (s *service) UpdateUser(ctx context.Context, command commands.Update) (*res
 
 	committed = true
 
+	log.Info("user was updated successfully", slog.Int64("user_id", command.ID))
+
 	return result, nil
 }
