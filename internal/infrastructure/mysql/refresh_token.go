@@ -71,6 +71,7 @@ func (rtr *RefreshTokenRepo) UpdateByTokenTx(ctx context.Context, tx tx.Tx, comm
 	return rtr.updateByUserIDTx(ctx, sqlTx, commands.UpdateByUserID{
 		UserID:              userID,
 		NewRefreshTokenHash: command.NewRefreshTokenHash,
+		ExpiresAt:           command.ExpiresAt,
 	}, fn)
 }
 
@@ -127,9 +128,14 @@ func (rtr *RefreshTokenRepo) DeleteByTokenTx(ctx context.Context, tx tx.Tx, comm
 }
 
 func (rtr *RefreshTokenRepo) updateByUserIDTx(ctx context.Context, tx *sql.Tx, command commands.UpdateByUserID, fn string) (*results.Update, error) {
-	res, err := tx.ExecContext(ctx, `UPDATE refresh_tokens SET refresh_token_hash = ? WHERE user_id = ?`,
-		command.NewRefreshTokenHash,
+	res, err := tx.ExecContext(ctx, `INSERT INTO refresh_tokens (user_id, refresh_token_hash, expires_at)
+												VALUES (?, ?, ?)
+												ON DUPLICATE KEY UPDATE
+    												refresh_token_hash = VALUES(refresh_token_hash),
+    												expires_at = VALUES(expires_at)`,
 		command.UserID,
+		command.NewRefreshTokenHash,
+		command.ExpiresAt,
 	)
 
 	if err != nil {

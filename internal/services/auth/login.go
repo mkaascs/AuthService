@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
 	"log/slog"
+	"time"
 )
 
 func (s *service) Login(ctx context.Context, command commands.Login) (*results.Login, error) {
@@ -66,6 +67,7 @@ func (s *service) Login(ctx context.Context, command commands.Login) (*results.L
 	_, err = s.tokenRepo.UpdateByUserIDTx(ctx, tx, tokenCommands.UpdateByUserID{
 		UserID:              result.User.ID,
 		NewRefreshTokenHash: refreshToken.Hash(newRefreshToken, s.hmacSecret),
+		ExpiresAt:           time.Now().Add(s.config.RefreshTokenTTL),
 	})
 
 	if err != nil {

@@ -11,11 +11,13 @@ type Add struct {
 type UpdateByToken struct {
 	RefreshTokenHash    string
 	NewRefreshTokenHash string
+	ExpiresAt           time.Time
 }
 
 type UpdateByUserID struct {
 	UserID              int64
 	NewRefreshTokenHash string
+	ExpiresAt           time.Time
 }
 
 type DeleteByToken struct {

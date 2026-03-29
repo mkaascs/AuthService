@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"time"
 )
 
 func (s *service) Refresh(ctx context.Context, command commands.Refresh) (*results.Refresh, error) {
@@ -38,6 +39,7 @@ func (s *service) Refresh(ctx context.Context, command commands.Refresh) (*resul
 	result, err := s.tokenRepo.UpdateByTokenTx(ctx, tx, tokenCommands.UpdateByToken{
 		RefreshTokenHash:    refreshToken.Hash(command.RefreshToken, s.hmacSecret),
 		NewRefreshTokenHash: refreshToken.Hash(newRefreshToken, s.hmacSecret),
+		ExpiresAt:           time.Now().Add(s.config.RefreshTokenTTL),
 	})
 
 	if err != nil {

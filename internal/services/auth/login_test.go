@@ -55,7 +55,7 @@ func TestService_Login(t *testing.T) {
 					User: entities.User{
 						ID:           2,
 						Login:        command.Login,
-						PasswordHash: string(passwordHash),
+						PasswordHash: passwordHash,
 						Roles:        []string{entities.RoleAdmin},
 					},
 				}, nil
