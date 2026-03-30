@@ -10,6 +10,7 @@ import (
 	"auth-service/internal/lib/refreshToken"
 	"auth-service/internal/testutil"
 	"context"
+	"errors"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -28,57 +29,111 @@ func TestService_Logout(t *testing.T) {
 
 	logoutCommand := commands.Logout{
 		RefreshToken: "refresh-token",
+		AccessToken:  "access-token",
 	}
 
-	tests := []struct {
-		name    string
-		mockErr error
-	}{
-		{
-			name:    "success",
-			mockErr: nil,
-		},
-		{
-			name:    "invalid refresh token",
-			mockErr: authErrors.ErrInvalidRefreshToken,
-		},
+	validClaims := &results.Parse{
+		JTI:       "jti-abc123",
+		UserID:    1,
+		ExpiresAt: time.Now().Add(TTL),
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+	t.Run("success", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
 
-			mock := testutil.NewAuthMocks(t, ctrl)
-			svc := newTestService(mock, secret, cfg)
+		mock := testutil.NewAuthMocks(t, ctrl)
+		svc := newTestService(mock, secret, cfg)
 
-			mock.TokenRepo.EXPECT().BeginTx(gomock.Any()).Return(mock.Tx, nil)
+		mock.AccessTokenSvc.EXPECT().Parse(gomock.Any()).Return(validClaims, nil)
 
-			mock.TokenRepo.EXPECT().DeleteByTokenTx(gomock.Any(), mock.Tx, gomock.Any()).
-				DoAndReturn(func(ctx context.Context, tx tx.Tx, command tokenCommands.DeleteByToken) (*results.Delete, error) {
-					refreshTokenHash := refreshToken.Hash(logoutCommand.RefreshToken, secret)
-					require.Equal(t, refreshTokenHash, command.RefreshTokenHash)
-					if test.mockErr != nil {
-						return nil, test.mockErr
-					}
+		mock.TokenRepo.EXPECT().BeginTx(gomock.Any()).Return(mock.Tx, nil)
 
-					return &results.Delete{UserID: 1}, nil
-				})
+		mock.TokenRepo.EXPECT().DeleteByTokenTx(gomock.Any(), mock.Tx, gomock.Any()).
+			DoAndReturn(func(ctx context.Context, tx tx.Tx, command tokenCommands.DeleteByToken) (*results.Delete, error) {
+				require.Equal(t, refreshToken.Hash(logoutCommand.RefreshToken, secret), command.RefreshTokenHash)
+				return &results.Delete{UserID: 1}, nil
+			})
 
-			mock.Tx.EXPECT().Rollback().Return(nil).AnyTimes()
-			if test.mockErr == nil {
-				mock.Tx.EXPECT().Commit().Return(nil)
-			}
+		mock.Tx.EXPECT().Commit().Return(nil)
+		mock.Tx.EXPECT().Rollback().Return(nil).AnyTimes()
 
-			err := svc.Logout(context.Background(), logoutCommand)
-			if test.mockErr == nil {
-				require.NoError(t, err)
-				return
-			}
+		mock.AccessTokenRepo.EXPECT().Revoke(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(ctx context.Context, cmd tokenCommands.Revoke) error {
+				require.Equal(t, validClaims.JTI, cmd.JTI)
+				require.Positive(t, cmd.TTL)
+				return nil
+			})
 
-			require.ErrorIs(t, err, test.mockErr)
-		})
-	}
+		err := svc.Logout(context.Background(), logoutCommand)
+		require.NoError(t, err)
+	})
+
+	t.Run("success with expired access token", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mock := testutil.NewAuthMocks(t, ctrl)
+		svc := newTestService(mock, secret, cfg)
+
+		mock.AccessTokenSvc.EXPECT().Parse(gomock.Any()).
+			Return(nil, authErrors.ErrAccessTokenExpired)
+
+		mock.TokenRepo.EXPECT().BeginTx(gomock.Any()).Return(mock.Tx, nil)
+
+		mock.TokenRepo.EXPECT().DeleteByTokenTx(gomock.Any(), mock.Tx, gomock.Any()).
+			Return(&results.Delete{UserID: 1}, nil)
+
+		mock.Tx.EXPECT().Commit().Return(nil)
+		mock.Tx.EXPECT().Rollback().Return(nil).AnyTimes()
+
+		err := svc.Logout(context.Background(), logoutCommand)
+		require.NoError(t, err)
+	})
+
+	t.Run("success when redis revoke fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mock := testutil.NewAuthMocks(t, ctrl)
+		svc := newTestService(mock, secret, cfg)
+
+		mock.AccessTokenSvc.EXPECT().Parse(gomock.Any()).Return(validClaims, nil)
+
+		mock.TokenRepo.EXPECT().BeginTx(gomock.Any()).Return(mock.Tx, nil)
+
+		mock.TokenRepo.EXPECT().DeleteByTokenTx(gomock.Any(), mock.Tx, gomock.Any()).
+			Return(&results.Delete{UserID: 1}, nil)
+
+		mock.Tx.EXPECT().Commit().Return(nil)
+		mock.Tx.EXPECT().Rollback().Return(nil).AnyTimes()
+
+		mock.AccessTokenRepo.EXPECT().Revoke(gomock.Any(), gomock.Any()).
+			Return(errors.New("redis: connection refused"))
+
+		err := svc.Logout(context.Background(), logoutCommand)
+		require.NoError(t, err)
+	})
+
+	t.Run("invalid refresh token", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mock := testutil.NewAuthMocks(t, ctrl)
+		svc := newTestService(mock, secret, cfg)
+
+		mock.AccessTokenSvc.EXPECT().Parse(gomock.Any()).Return(validClaims, nil)
+
+		mock.TokenRepo.EXPECT().BeginTx(gomock.Any()).Return(mock.Tx, nil)
+
+		mock.TokenRepo.EXPECT().DeleteByTokenTx(gomock.Any(), mock.Tx, gomock.Any()).
+			Return(nil, authErrors.ErrInvalidRefreshToken)
+
+		mock.Tx.EXPECT().Rollback().Return(nil).AnyTimes()
+
+		err := svc.Logout(context.Background(), logoutCommand)
+		require.ErrorIs(t, err, authErrors.ErrInvalidRefreshToken)
+	})
 
 	t.Run("context canceled", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
@@ -90,12 +145,14 @@ func TestService_Logout(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 
+		mock.AccessTokenSvc.EXPECT().Parse(gomock.Any()).Return(validClaims, nil)
+
 		mock.TokenRepo.EXPECT().BeginTx(gomock.Any()).Return(mock.Tx, nil)
 
 		mock.TokenRepo.EXPECT().DeleteByTokenTx(gomock.Any(), mock.Tx, gomock.Any()).
 			Return(nil, context.Canceled)
 
-		mock.Tx.EXPECT().Rollback().Return(nil)
+		mock.Tx.EXPECT().Rollback().Return(nil).AnyTimes()
 
 		err := svc.Logout(ctx, logoutCommand)
 		require.ErrorIs(t, err, context.Canceled)

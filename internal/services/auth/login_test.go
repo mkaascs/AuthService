@@ -68,7 +68,7 @@ func TestService_Login(t *testing.T) {
 				return &tokenResults.Update{UserID: 2}, nil
 			})
 
-		mock.AccessToken.EXPECT().Generate(gomock.Any()).
+		mock.AccessTokenSvc.EXPECT().Generate(gomock.Any()).
 			DoAndReturn(func(command tokenCommands.Generate) (*jwtResults.Generate, error) {
 				require.Equal(t, command.UserID, int64(2))
 				require.Equal(t, command.Roles, []string{entities.RoleAdmin})
@@ -158,7 +158,7 @@ func TestService_Login(t *testing.T) {
 		mock.TokenRepo.EXPECT().UpdateByUserIDTx(gomock.Any(), mock.Tx, gomock.Any()).
 			Return(&tokenResults.Update{UserID: 2}, nil)
 
-		mock.AccessToken.EXPECT().Generate(gomock.Any()).
+		mock.AccessTokenSvc.EXPECT().Generate(gomock.Any()).
 			Return(nil, errors.New("incorrect format"))
 
 		mock.Tx.EXPECT().Rollback().Return(nil)
@@ -227,11 +227,12 @@ func TestService_Login(t *testing.T) {
 
 func newTestService(mock *testutil.AuthMocks, secret []byte, cfg config.AuthConfig) services.Auth {
 	return New(ServiceArgs{
-		AccessTokenSvc: mock.AccessToken,
+		AccessTokenSvc: mock.AccessTokenSvc,
 		HmacSecret:     secret,
 		Config:         cfg,
 	}, RepoArgs{
-		UserRepo:  mock.UserRepo,
-		TokenRepo: mock.TokenRepo,
+		UserRepo:        mock.UserRepo,
+		TokenRepo:       mock.TokenRepo,
+		AccessTokenRepo: mock.AccessTokenRepo,
 	}, log.NewPlugLogger())
 }

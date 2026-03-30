@@ -8,6 +8,7 @@ import (
 	"auth-service/internal/lib/log"
 	"auth-service/internal/mocks"
 	"context"
+	"errors"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -15,67 +16,104 @@ import (
 )
 
 func TestService_ValidateToken(t *testing.T) {
-	tests := []struct {
-		name          string
-		accessToken   string
-		mockError     error
-		expectedError error
-	}{
-		{
-			name:          "success validated",
-			accessToken:   "correct-access-token",
-			mockError:     nil,
-			expectedError: nil,
-		},
-		{
-			name:          "access token expired",
-			accessToken:   "expired-access-token",
-			mockError:     authErrors.ErrAccessTokenExpired,
-			expectedError: authErrors.ErrAccessTokenExpired,
-		},
-		{
-			name:          "invalid access token",
-			accessToken:   "invalid-access-token",
-			mockError:     authErrors.ErrInvalidAccessToken,
-			expectedError: authErrors.ErrInvalidAccessToken,
-		},
+	validParseResult := &results.Parse{
+		JTI:       "jti-abc123",
+		UserID:    2,
+		Roles:     []string{entities.RoleAdmin},
+		ExpiresAt: time.Now().Add(15 * time.Minute),
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
-
-			mockAccessToken := mocks.NewMockAccessToken(ctrl)
-			tokenService := New(mockAccessToken, log.NewPlugLogger())
-
-			var parseResult *results.Parse
-			if test.mockError == nil {
-				parseResult = &results.Parse{
-					UserID:    2,
-					Roles:     []string{entities.RoleAdmin},
-					ExpiresAt: time.Now().Add(time.Minute),
-				}
-			}
-
-			mockAccessToken.EXPECT().Parse(gomock.Any()).
-				Return(parseResult, test.mockError)
-
-			result, err := tokenService.ValidateToken(context.Background(), commands.Validate{
-				AccessToken: test.accessToken,
-			})
-
-			if test.expectedError != nil {
-				require.ErrorIs(t, err, test.expectedError)
-				require.Nil(t, result)
-			}
-
-			if test.expectedError == nil {
-				require.NoError(t, err)
-				require.Equal(t, parseResult.UserID, result.UserID)
-				require.Equal(t, parseResult.Roles, result.Roles)
-				require.WithinDuration(t, parseResult.ExpiresAt, result.ExpiresAt, time.Second)
-			}
-		})
+	validateCommand := commands.Validate{
+		AccessToken: "some-access-token",
 	}
+
+	t.Run("success", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockAccessTokenSvc := mocks.NewMockAccessToken(ctrl)
+		mockAccessTokenRepo := mocks.NewMockAccessTokenRepo(ctrl)
+		svc := New(mockAccessTokenSvc, mockAccessTokenRepo, log.NewPlugLogger())
+
+		mockAccessTokenSvc.EXPECT().Parse(gomock.Any()).Return(validParseResult, nil)
+
+		mockAccessTokenRepo.EXPECT().IsRevoked(gomock.Any(), validParseResult.JTI).
+			Return(false, nil)
+
+		result, err := svc.ValidateToken(context.Background(), validateCommand)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, validParseResult.UserID, result.UserID)
+		require.Equal(t, validParseResult.Roles, result.Roles)
+		require.WithinDuration(t, validParseResult.ExpiresAt, result.ExpiresAt, time.Second)
+	})
+
+	t.Run("token revoked", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockAccessTokenSvc := mocks.NewMockAccessToken(ctrl)
+		mockAccessTokenRepo := mocks.NewMockAccessTokenRepo(ctrl)
+		svc := New(mockAccessTokenSvc, mockAccessTokenRepo, log.NewPlugLogger())
+
+		mockAccessTokenSvc.EXPECT().Parse(gomock.Any()).Return(validParseResult, nil)
+
+		mockAccessTokenRepo.EXPECT().IsRevoked(gomock.Any(), validParseResult.JTI).
+			Return(true, nil)
+
+		result, err := svc.ValidateToken(context.Background(), validateCommand)
+		require.Nil(t, result)
+		require.ErrorIs(t, err, authErrors.ErrAccessTokenRevoked)
+	})
+
+	t.Run("access token expired", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockAccessTokenSvc := mocks.NewMockAccessToken(ctrl)
+		mockAccessTokenRepo := mocks.NewMockAccessTokenRepo(ctrl)
+		svc := New(mockAccessTokenSvc, mockAccessTokenRepo, log.NewPlugLogger())
+
+		mockAccessTokenSvc.EXPECT().Parse(gomock.Any()).
+			Return(nil, authErrors.ErrAccessTokenExpired)
+
+		result, err := svc.ValidateToken(context.Background(), validateCommand)
+		require.Nil(t, result)
+		require.ErrorIs(t, err, authErrors.ErrAccessTokenExpired)
+	})
+
+	t.Run("invalid access token", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockAccessTokenSvc := mocks.NewMockAccessToken(ctrl)
+		mockAccessTokenRepo := mocks.NewMockAccessTokenRepo(ctrl)
+		svc := New(mockAccessTokenSvc, mockAccessTokenRepo, log.NewPlugLogger())
+
+		mockAccessTokenSvc.EXPECT().Parse(gomock.Any()).
+			Return(nil, authErrors.ErrInvalidAccessToken)
+
+		result, err := svc.ValidateToken(context.Background(), validateCommand)
+		require.Nil(t, result)
+		require.ErrorIs(t, err, authErrors.ErrInvalidAccessToken)
+	})
+
+	t.Run("redis unavailable fail open", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockAccessTokenSvc := mocks.NewMockAccessToken(ctrl)
+		mockAccessTokenRepo := mocks.NewMockAccessTokenRepo(ctrl)
+		svc := New(mockAccessTokenSvc, mockAccessTokenRepo, log.NewPlugLogger())
+
+		mockAccessTokenSvc.EXPECT().Parse(gomock.Any()).Return(validParseResult, nil)
+
+		mockAccessTokenRepo.EXPECT().IsRevoked(gomock.Any(), validParseResult.JTI).
+			Return(false, errors.New("redis: connection refused"))
+
+		result, err := svc.ValidateToken(context.Background(), validateCommand)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, validParseResult.UserID, result.UserID)
+	})
 }
