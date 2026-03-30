@@ -3,6 +3,7 @@ package app
 import (
 	grpcapp "auth-service/internal/app/grpc"
 	"auth-service/internal/app/mysql"
+	"auth-service/internal/app/redis"
 	"auth-service/internal/config"
 	handlers "auth-service/internal/delivery/grpc/auth"
 	repo "auth-service/internal/infrastructure/mysql"
@@ -18,8 +19,10 @@ import (
 type App struct {
 	GRPC  *grpcapp.App
 	MySql *mysql.App
-	log   *slog.Logger
-	cfg   config.Config
+	Redis *redis.App
+
+	logger *slog.Logger
+	config config.Config
 }
 
 func New(cfg config.Config, logger *slog.Logger) *App {
@@ -28,17 +31,20 @@ func New(cfg config.Config, logger *slog.Logger) *App {
 	mysql.MustMigrate(logger, cfg.DbConnectionString)
 	mysqlApp, _ := mysql.New(logger, cfg.DbConnectionString)
 
+	redisApp := redis.New(cfg.RedisConfig, logger)
+
 	return &App{
-		GRPC:  grpcApp,
-		MySql: mysqlApp,
-		log:   logger,
-		cfg:   cfg,
+		GRPC:   grpcApp,
+		MySql:  mysqlApp,
+		Redis:  redisApp,
+		logger: logger,
+		config: cfg,
 	}
 }
 
 func (a *App) MustRegisterHandlers() {
 	const fn = "app.MustRegisterHandlers"
-	log := a.log.With(slog.String("fn", fn))
+	log := a.logger.With(slog.String("fn", fn))
 
 	secret, err := base64.StdEncoding.DecodeString(os.Getenv("HMAC_SECRET_BASE64"))
 	if err != nil || len(secret) == 0 {
@@ -46,7 +52,7 @@ func (a *App) MustRegisterHandlers() {
 		os.Exit(1)
 	}
 
-	jwtService, err := jwt.New(a.cfg.AuthConfig)
+	jwtService, err := jwt.New(a.config.AuthConfig)
 	if err != nil {
 		log.Error("failed to create JWT service")
 		os.Exit(1)
@@ -57,20 +63,20 @@ func (a *App) MustRegisterHandlers() {
 		os.Exit(1)
 	}
 
-	userRepo := repo.NewUserRepo(a.MySql.DB, a.log)
-	tokenRepo := repo.NewRefreshTokenRepo(a.MySql.DB, a.log)
+	userRepo := repo.NewUserRepo(a.MySql.DB, a.logger)
+	tokenRepo := repo.NewRefreshTokenRepo(a.MySql.DB, a.logger)
 
 	authService := auth.New(auth.ServiceArgs{
 		AccessTokens: jwtService,
-		Config:       a.cfg.AuthConfig,
+		Config:       a.config.AuthConfig,
 		HmacSecret:   secret,
 	}, auth.RepoArgs{
 		UserRepo:  userRepo,
 		TokenRepo: tokenRepo,
-	}, a.log)
+	}, a.logger)
 
-	userService := user.New(userRepo, a.log)
-	tokenService := token.New(jwtService, a.log)
+	userService := user.New(userRepo, a.logger)
+	tokenService := token.New(jwtService, a.logger)
 
 	handlers.RegisterAuthServer(a.GRPC.Server, authService)
 	handlers.RegisterUserServer(a.GRPC.Server, userService)

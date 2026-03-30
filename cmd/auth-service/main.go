@@ -20,6 +20,8 @@ func main() {
 	application := app.New(*cfg, logger)
 
 	application.MySql.MustConnect()
+	application.Redis.MustConnect()
+
 	application.MustRegisterHandlers()
 
 	go application.GRPC.MustRun()
@@ -31,6 +33,7 @@ func main() {
 
 	application.GRPC.Stop()
 	_ = application.MySql.Close()
+	_ = application.Redis.Close()
 
 	logger.Info("application auth-service stopped")
 }

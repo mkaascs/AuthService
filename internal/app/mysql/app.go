@@ -19,7 +19,7 @@ type App struct {
 }
 
 func New(logger *slog.Logger, connectionString string) (*App, error) {
-	const fn = "app.mysql.app.New"
+	const fn = "app.mysql.App.New"
 	log := logger.With(slog.String("fn", fn), slog.String("driver", "mysql"))
 
 	db, err := sql.Open("mysql", connectionString)
@@ -41,7 +41,7 @@ func (a *App) MustConnect() {
 }
 
 func (a *App) Connect() error {
-	const fn = "app.mysql.app.Connect"
+	const fn = "app.mysql.App.Connect"
 	log := a.logger.With(slog.String("fn", fn), slog.String("driver", "mysql"))
 
 	if err := a.DB.Ping(); err != nil {
@@ -54,7 +54,7 @@ func (a *App) Connect() error {
 }
 
 func (a *App) Close() error {
-	const fn = "app.mysql.app.Close"
+	const fn = "app.mysql.App.Close"
 	log := a.logger.With(slog.String("fn", fn), slog.String("driver", "mysql"))
 
 	if err := a.DB.Close(); err != nil {
@@ -73,7 +73,7 @@ func MustMigrate(logger *slog.Logger, connectionString string) {
 }
 
 func Migrate(logger *slog.Logger, connectionString string) error {
-	const fn = "app.mysql.app.Migrate"
+	const fn = "app.mysql.App.Migrate"
 	log := logger.With(slog.String("fn", fn), slog.String("driver", "mysql"))
 
 	mgr, err := migrate.New("file://migrations", "mysql://"+connectionString)

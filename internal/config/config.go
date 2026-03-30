@@ -18,6 +18,7 @@ type Config struct {
 	DbConnectionString string `yaml:"-"`
 	GrpcConfig         `yaml:"grpc"`
 	AuthConfig         `yaml:"auth"`
+	RedisConfig        `yaml:"redis"`
 }
 
 type GrpcConfig struct {
@@ -29,6 +30,15 @@ type AuthConfig struct {
 	Issuer          string        `yaml:"issuer" env-default:"auth-service"`
 	AccessTokenTTL  time.Duration `yaml:"access_token_ttl" env-default:"15m"`
 	RefreshTokenTTL time.Duration `yaml:"refresh_token_ttl" env-default:"720h"`
+}
+
+type RedisConfig struct {
+	Host        string        `yaml:"host" env-required:"true"`
+	Password    string        `yaml:"-" env-required:"true" env:"REDIS_PASSWORD"`
+	DB          int           `yaml:"db" env-default:"0"`
+	MaxRetries  int           `yaml:"max_retries" env-default:"5"`
+	DialTimeout time.Duration `yaml:"dial_timeout" env-default:"10s"`
+	Timeout     time.Duration `yaml:"timeout" env-default:"5s"`
 }
 
 func MustLoad() *Config {
