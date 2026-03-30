@@ -5,12 +5,14 @@ import (
 	"auth-service/internal/domain/dto/tokens/results"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"time"
 )
 
 type Claims struct {
 	UserID int64    `json:"sub"`
 	Roles  []string `json:"roles"`
+	JTI    string   `json:"jti"`
 	jwt.RegisteredClaims
 }
 
@@ -19,6 +21,7 @@ func (s *service) Generate(command commands.Generate) (*results.Generate, error)
 	claims := Claims{
 		UserID: command.UserID,
 		Roles:  command.Roles,
+		JTI:    uuid.New().String(),
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(now.Add(s.config.AccessTokenTTL)),
 			IssuedAt:  jwt.NewNumericDate(now),
