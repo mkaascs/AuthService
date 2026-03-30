@@ -1,18 +1,43 @@
 version: "3"
 
+vars:
+  COMPOSE_CMD: docker compose
+  SERVICE_NAME: auth-service
+
 tasks:
   default:
     desc: "Commands list"
     cmds:
       - task --list --color
+  docker:up:
+    desc: "Run all services"
+    cmds:
+      - "{{.COMPOSE_CMD}} up -d --build"
+  docker:down:
+    desc: "Stop all services"
+    cmds:
+      - "{{.COMPOSE_CMD}} down"
+  docker:logs:
+    desc: "Show service logs"
+    cmds:
+      - "{{.COMPOSE_CMD}} logs -f {{.SERVICE_NAME}}"
+  docker:restart:
+    desc: "Restart {{.SERVICE_NAME}}"
+    cmds:
+      - "{{.COMPOSE_CMD}} restart {{.SERVICE_NAME}}"
   mocks:
     desc: "Generating all mocks from domain interfaces"
     cmds:
       - ./scripts/gen_mocks.sh
   test:
-    desc: "Running all tests"
+    desc: "Run all tests"
     cmds:
       - go test -v -coverprofile=coverage.out ./...
+  test:cover:
+    desc: "Run all test and open coverage report"
+    cmds:
+      - task test
+      - go tool cover -html=coverage.out -o coverage.html
   migrate:up:
     desc: "Up db migrations"
     cmds:
@@ -21,3 +46,11 @@ tasks:
     desc: "Down db migrations"
     cmds:
       - go run ./cmd/migrate/main.go down
+  migrate:up:docker:
+    desc: "Up db migrations inside container"
+    cmds:
+      - "{{.COMPOSE_CMD}} exec {{.SERVICE_NAME}} go run ./cmd/migrate/main.go up"
+  migrate:down:docker:
+    desc: "Down db migrations inside container"
+    cmds:
+      - "{{.COMPOSE_CMD}} exec {{.SERVICE_NAME}} go run ./cmd/migrate/main.go down"

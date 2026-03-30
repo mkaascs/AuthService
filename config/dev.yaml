@@ -1,0 +1,15 @@
+env: "dev"
+db_host: "mysql:3306"
+grpc:
+  port: 5505
+  timeout: 5s
+auth:
+  issuer: "auth-service"
+  access_token_ttl: 15m
+  refresh_token_ttl: 744h # 31 days
+redis:
+  host: "redis:6379"
+  db: 0
+  dial_timeout: 10s
+  timeout: 5s
+  max_retries: 1
