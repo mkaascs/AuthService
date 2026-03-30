@@ -36,6 +36,7 @@ func (s *service) ValidateToken(ctx context.Context, command commands.Validate) 
 	}
 
 	if isRevoked {
+		log.Info("access token is revoked", slog.Int64("user_id", result.UserID))
 		return nil, authErrors.ErrAccessTokenRevoked
 	}
 
