@@ -9,5 +9,6 @@ type Generate struct {
 type Parse struct {
 	UserID    int64
 	Roles     []string
+	JTI       string
 	ExpiresAt time.Time
 }

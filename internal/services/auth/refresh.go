@@ -70,7 +70,7 @@ func (s *service) Refresh(ctx context.Context, command commands.Refresh) (*resul
 		return nil, fmt.Errorf("%s: %s: %w", fn, msg, err)
 	}
 
-	accessToken, err := s.accessTokens.Generate(tokenCommands.Generate{
+	accessToken, err := s.accessTokenSvc.Generate(tokenCommands.Generate{
 		UserID: user.User.ID,
 		Roles:  user.User.Roles,
 	})

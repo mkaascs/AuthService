@@ -10,4 +10,5 @@ var (
 	ErrInvalidRefreshToken       = errors.New("invalid refresh token")
 	ErrRefreshTokenAlreadyExists = errors.New("refresh token already exists")
 	ErrInvalidAccessToken        = errors.New("invalid access token")
+	ErrAccessTokenRevoked        = errors.New("access token revoked")
 )

@@ -81,7 +81,7 @@ func (s *service) Login(ctx context.Context, command commands.Login) (*results.L
 		return nil, fmt.Errorf("%s: %s: %w", fn, msg, err)
 	}
 
-	accessToken, err := s.accessTokens.Generate(tokenCommands.Generate{
+	accessToken, err := s.accessTokenSvc.Generate(tokenCommands.Generate{
 		UserID: result.User.ID,
 		Roles:  result.User.Roles,
 	})

@@ -21,6 +21,10 @@ func MapError(err error) error {
 		return status.Error(codes.AlreadyExists, "user already exists")
 	}
 
+	if errors.Is(err, authErrors.ErrInvalidAccessToken) {
+		return status.Error(codes.Unauthenticated, "invalid access token")
+	}
+
 	if errors.Is(err, authErrors.ErrUserNotFound) {
 		return status.Error(codes.NotFound, "user not found")
 	}

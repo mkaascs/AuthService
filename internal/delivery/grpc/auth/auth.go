@@ -92,6 +92,7 @@ func (as *authServer) Logout(ctx context.Context, request *authv1.LogoutRequest)
 
 	err := as.service.Logout(ctx, commands.Logout{
 		RefreshToken: request.RefreshToken,
+		AccessToken:  request.AccessToken,
 	})
 
 	if err != nil {

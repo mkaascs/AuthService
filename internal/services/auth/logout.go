@@ -10,11 +10,23 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"time"
 )
 
 func (s *service) Logout(ctx context.Context, command commands.Logout) error {
 	const fn = "services.auth.service.Logout"
 	log := s.log.With(slog.String("fn", fn))
+
+	claims, err := s.accessTokenSvc.Parse(tokenCommands.Parse{
+		Token: command.AccessToken,
+	})
+
+	if err != nil {
+		log.Info("failed to parse access token", sloglib.Error(err))
+		if !errors.Is(err, authErrors.ErrAccessTokenExpired) {
+			return fmt.Errorf("%s: failed to parse access token: %w", fn, err)
+		}
+	}
 
 	tx, err := s.tokenRepo.BeginTx(ctx)
 	if err != nil {
@@ -58,6 +70,19 @@ func (s *service) Logout(ctx context.Context, command commands.Logout) error {
 	}
 
 	committed = true
+
+	if claims != nil {
+		if remainingTTL := time.Until(claims.ExpiresAt); remainingTTL > 0 {
+			revoke := tokenCommands.Revoke{
+				JTI: claims.JTI,
+				TTL: remainingTTL,
+			}
+
+			if err := s.accessTokenRepo.Revoke(ctx, revoke); err != nil {
+				log.Warn("failed to revoke access token", sloglib.Error(err))
+			}
+		}
+	}
 
 	log.Info("user logged out successfully", slog.Int64("user_id", result.UserID))
 

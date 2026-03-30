@@ -11,11 +11,11 @@ import (
 	"log/slog"
 )
 
-func (s *service) ValidateToken(_ context.Context, command commands.Validate) (*results.Validate, error) {
+func (s *service) ValidateToken(ctx context.Context, command commands.Validate) (*results.Validate, error) {
 	const fn = "services.token.service.ValidateToken"
 	log := s.log.With(slog.String("fn", fn))
 
-	result, err := s.accessTokens.Parse(commands.Parse{
+	result, err := s.accessTokenSvc.Parse(commands.Parse{
 		Token: command.AccessToken,
 	})
 
@@ -28,6 +28,15 @@ func (s *service) ValidateToken(_ context.Context, command commands.Validate) (*
 
 		log.Error(msg, sloglib.Error(err))
 		return nil, fmt.Errorf("%s: %s: %w", fn, msg, err)
+	}
+
+	isRevoked, err := s.accessTokenRepo.IsRevoked(ctx, result.JTI)
+	if err != nil {
+		log.Warn("failed to check if token is revoked", sloglib.Error(err))
+	}
+
+	if isRevoked {
+		return nil, authErrors.ErrAccessTokenRevoked
 	}
 
 	log.Info("access token validated successfully", slog.Int64("user_id", result.UserID))

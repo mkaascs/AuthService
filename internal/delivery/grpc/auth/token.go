@@ -36,6 +36,12 @@ func (ts *tokenServer) ValidateToken(ctx context.Context, request *authv1.Valida
 			}, nil
 		}
 
+		if errors.Is(err, authErrors.ErrAccessTokenRevoked) {
+			return &authv1.ValidateTokenResponse{
+				Status: authv1.TokenStatus_REVOKED,
+			}, nil
+		}
+
 		return nil, util.MapError(err)
 	}
 

@@ -16,5 +16,6 @@ type Refresh struct {
 }
 
 type Logout struct {
+	AccessToken  string
 	RefreshToken string
 }

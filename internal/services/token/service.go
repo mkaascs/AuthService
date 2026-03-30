@@ -1,18 +1,21 @@
 package token
 
 import (
+	"auth-service/internal/domain/interfaces/repositories"
 	"auth-service/internal/domain/interfaces/services"
 	"log/slog"
 )
 
 type service struct {
-	accessTokens services.AccessToken
-	log          *slog.Logger
+	accessTokenSvc  services.AccessToken
+	accessTokenRepo repositories.AccessTokenRepo
+	log             *slog.Logger
 }
 
-func New(accessTokens services.AccessToken, log *slog.Logger) services.Token {
+func New(accessTokenSvc services.AccessToken, accessTokenRepo repositories.AccessTokenRepo, log *slog.Logger) services.Token {
 	return &service{
-		accessTokens: accessTokens,
-		log:          log,
+		accessTokenSvc:  accessTokenSvc,
+		accessTokenRepo: accessTokenRepo,
+		log:             log,
 	}
 }

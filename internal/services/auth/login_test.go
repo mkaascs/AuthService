@@ -227,9 +227,9 @@ func TestService_Login(t *testing.T) {
 
 func newTestService(mock *testutil.AuthMocks, secret []byte, cfg config.AuthConfig) services.Auth {
 	return New(ServiceArgs{
-		AccessTokens: mock.AccessToken,
-		HmacSecret:   secret,
-		Config:       cfg,
+		AccessTokenSvc: mock.AccessToken,
+		HmacSecret:     secret,
+		Config:         cfg,
 	}, RepoArgs{
 		UserRepo:  mock.UserRepo,
 		TokenRepo: mock.TokenRepo,

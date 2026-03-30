@@ -35,5 +35,6 @@ func (s *service) Parse(command commands.Parse) (*results.Parse, error) {
 		UserID:    claims.UserID,
 		Roles:     claims.Roles,
 		ExpiresAt: claims.ExpiresAt.Time,
+		JTI:       claims.JTI,
 	}, nil
 }

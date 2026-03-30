@@ -149,6 +149,7 @@ func (ts *AccessTokenTestSuite) RunParseTests(t *testing.T) {
 
 			require.NoError(t, err)
 			require.NotNil(t, result)
+			require.NotEmpty(t, result.JTI)
 			require.Equal(t, test.userId, result.UserID)
 			require.Equal(t, test.roles, result.Roles)
 		})

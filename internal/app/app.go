@@ -7,6 +7,7 @@ import (
 	"auth-service/internal/config"
 	handlers "auth-service/internal/delivery/grpc/auth"
 	repo "auth-service/internal/infrastructure/mysql"
+	redisRepo "auth-service/internal/infrastructure/redis"
 	"auth-service/internal/jwt"
 	"auth-service/internal/services/auth"
 	"auth-service/internal/services/token"
@@ -63,20 +64,27 @@ func (a *App) MustRegisterHandlers() {
 		os.Exit(1)
 	}
 
+	if a.Redis.Client == nil {
+		log.Error("Redis DB is not initialized (do Redis.MustConnect() first)")
+		os.Exit(1)
+	}
+
 	userRepo := repo.NewUserRepo(a.MySql.DB, a.logger)
 	tokenRepo := repo.NewRefreshTokenRepo(a.MySql.DB, a.logger)
+	accessTokenRepo := redisRepo.NewAccessTokenRepo(a.Redis.Client)
 
 	authService := auth.New(auth.ServiceArgs{
-		AccessTokens: jwtService,
-		Config:       a.config.AuthConfig,
-		HmacSecret:   secret,
+		AccessTokenSvc: jwtService,
+		Config:         a.config.AuthConfig,
+		HmacSecret:     secret,
 	}, auth.RepoArgs{
-		UserRepo:  userRepo,
-		TokenRepo: tokenRepo,
+		UserRepo:        userRepo,
+		TokenRepo:       tokenRepo,
+		AccessTokenRepo: accessTokenRepo,
 	}, a.logger)
 
 	userService := user.New(userRepo, a.logger)
-	tokenService := token.New(jwtService, a.logger)
+	tokenService := token.New(jwtService, accessTokenRepo, a.logger)
 
 	handlers.RegisterAuthServer(a.GRPC.Server, authService)
 	handlers.RegisterUserServer(a.GRPC.Server, userService)
