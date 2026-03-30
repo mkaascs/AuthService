@@ -21,7 +21,9 @@ type authServer struct {
 }
 
 func (as *authServer) Login(ctx context.Context, request *authv1.LoginRequest) (*authv1.LoginResponse, error) {
-	// TODO: validate
+	if err := util.ValidateLoginRequest(request); err != nil {
+		return nil, err
+	}
 
 	result, err := as.service.Login(ctx, commands.Login{
 		Login:    request.Login,
@@ -52,8 +54,6 @@ func (as *authServer) Login(ctx context.Context, request *authv1.LoginRequest) (
 }
 
 func (as *authServer) Refresh(ctx context.Context, request *authv1.RefreshRequest) (*authv1.RefreshResponse, error) {
-	// TODO: validate
-
 	result, err := as.service.Refresh(ctx, commands.Refresh{
 		RefreshToken: request.RefreshToken,
 	})
@@ -70,7 +70,9 @@ func (as *authServer) Refresh(ctx context.Context, request *authv1.RefreshReques
 }
 
 func (as *authServer) Register(ctx context.Context, request *authv1.RegisterRequest) (*authv1.RegisterResponse, error) {
-	// TODO: validate
+	if err := util.ValidateRegisterRequest(request); err != nil {
+		return nil, err
+	}
 
 	result, err := as.service.Register(ctx, commands.Register{
 		Login:    request.Login,
@@ -88,8 +90,6 @@ func (as *authServer) Register(ctx context.Context, request *authv1.RegisterRequ
 }
 
 func (as *authServer) Logout(ctx context.Context, request *authv1.LogoutRequest) (*authv1.LogoutResponse, error) {
-	// TODO: validate
-
 	err := as.service.Logout(ctx, commands.Logout{
 		RefreshToken: request.RefreshToken,
 		AccessToken:  request.AccessToken,

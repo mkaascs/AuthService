@@ -17,7 +17,9 @@ type userServer struct {
 }
 
 func (us *userServer) GetUser(ctx context.Context, request *authv1.GetUserRequest) (*authv1.GetUserResponse, error) {
-	// TODO: validate
+	if err := util.ValidateUserID(request.UserId); err != nil {
+		return nil, err
+	}
 
 	result, err := us.users.GetUser(ctx, commands.GetById{
 		ID: request.UserId,
@@ -33,7 +35,9 @@ func (us *userServer) GetUser(ctx context.Context, request *authv1.GetUserReques
 }
 
 func (us *userServer) ChangePassword(ctx context.Context, request *authv1.ChangePasswordRequest) (*authv1.ChangePasswordResponse, error) {
-	// TODO: validate
+	if err := util.ValidateChangePasswordRequest(request); err != nil {
+		return nil, err
+	}
 
 	err := us.users.ChangePassword(ctx, commands.ChangePassword{
 		ID:          request.UserId,
@@ -49,7 +53,9 @@ func (us *userServer) ChangePassword(ctx context.Context, request *authv1.Change
 }
 
 func (us *userServer) UpdateUser(ctx context.Context, request *authv1.UpdateUserRequest) (*authv1.UpdateUserResponse, error) {
-	// TODO: validate
+	if err := util.ValidateUserID(request.UserId); err != nil {
+		return nil, err
+	}
 
 	result, err := us.users.UpdateUser(ctx, commands.Update{
 		ID:    request.UserId,
