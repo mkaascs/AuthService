@@ -40,6 +40,8 @@ func TestService_GetUser(t *testing.T) {
 				}, nil
 			})
 
+		mockTx.EXPECT().Rollback().Return(nil)
+
 		result, err := svc.GetUser(context.Background(), getCommand)
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -57,6 +59,8 @@ func TestService_GetUser(t *testing.T) {
 		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 		mockUserRepo.EXPECT().GetByIDTx(gomock.Any(), mockTx, gomock.Any()).
 			Return(nil, authErrors.ErrUserNotFound)
+
+		mockTx.EXPECT().Rollback().Return(nil)
 
 		result, err := svc.GetUser(context.Background(), getCommand)
 		require.Nil(t, result)
@@ -78,6 +82,8 @@ func TestService_GetUser(t *testing.T) {
 		mockUserRepo.EXPECT().GetByIDTx(gomock.Any(), mockTx, gomock.Any()).
 			Return(nil, context.Canceled)
 
+		mockTx.EXPECT().Rollback().Return(nil)
+
 		result, err := svc.GetUser(ctx, getCommand)
 		require.Nil(t, result)
 		require.ErrorIs(t, err, context.Canceled)
@@ -94,6 +100,8 @@ func TestService_GetUser(t *testing.T) {
 		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 		mockUserRepo.EXPECT().GetByIDTx(gomock.Any(), mockTx, gomock.Any()).
 			Return(nil, errors.New("internal error"))
+
+		mockTx.EXPECT().Rollback().Return(nil)
 
 		result, err := svc.GetUser(context.Background(), getCommand)
 		require.Nil(t, result)
