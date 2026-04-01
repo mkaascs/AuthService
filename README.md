@@ -18,11 +18,11 @@ A high-performance gRPC microservice for authentication built in Go. Provides se
 
 ## Services
 
-| Service | Methods | Description |
-|---------|---------|-------------|
-| `Auth` | `Login`, `Register`, `Refresh`, `Logout` | User authentication and session management |
-| `User` | `GetUser`, `UpdateUser`, `ChangePassword` | Profile management and password operations |
-| `Token` | `ValidateToken` | Token validation for service-to-service authentication |
+| Service | Methods                                                                           | Description |
+|---------|-----------------------------------------------------------------------------------|-------------|
+| `Auth` | `Login`, `Register`, `Refresh`, `Logout`                                          | User authentication and session management |
+| `User` | `GetUser`, `GetUsers`, `UpdateUser`, `ChangePassword`, `AssignRole`, `RevokeRole` | Profile management and password operations |
+| `Token` | `ValidateToken`                                                                   | Token validation for service-to-service authentication |
 
 ## Tech Stack
 
