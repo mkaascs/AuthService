@@ -3,7 +3,6 @@ package user
 import (
 	"auth-service/internal/domain/dto/user/commands"
 	"auth-service/internal/domain/dto/user/results"
-	authErrors "auth-service/internal/domain/entities/errors"
 	sloglib "auth-service/internal/lib/log/slog"
 	"context"
 	"errors"
@@ -11,8 +10,8 @@ import (
 	"log/slog"
 )
 
-func (s *service) GetUser(ctx context.Context, command commands.GetById) (*results.Get, error) {
-	const fn = "services.user.service.GetUser"
+func (s *service) GetUsers(ctx context.Context, command commands.GetUsers) (*results.GetUsers, error) {
+	const fn = "services.user.service.GetUsers"
 	log := s.log.With(slog.String("fn", fn))
 
 	tx, err := s.userRepo.BeginTx(ctx)
@@ -27,24 +26,18 @@ func (s *service) GetUser(ctx context.Context, command commands.GetById) (*resul
 		}
 	}()
 
-	result, err := s.userRepo.GetByIDTx(ctx, tx, command.ID)
+	result, err := s.userRepo.GetUsers(ctx, tx, command)
 	if err != nil {
-		const msg = "failed to get user"
-		if errors.Is(err, authErrors.ErrUserNotFound) {
-			log.Info(msg, sloglib.Error(err))
-			return nil, authErrors.ErrUserNotFound
-		}
-
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-			log.Info(msg, sloglib.Error(err))
+			log.Info("failed to get users", sloglib.Error(err))
 			return nil, ctx.Err()
 		}
 
-		log.Error(msg, sloglib.Error(err))
-		return nil, fmt.Errorf("%s: %s: %w", fn, msg, err)
+		log.Error("failed to get users", sloglib.Error(err))
+		return nil, fmt.Errorf("%s: failed to get users: %w", fn, err)
 	}
 
-	log.Info("user info received successfully", slog.Int64("user_id", command.ID))
+	log.Info("users info received successfully", slog.Int("total", result.Total))
 
 	return result, nil
 }

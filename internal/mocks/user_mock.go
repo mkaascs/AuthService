@@ -36,6 +36,20 @@ func (m *MockUser) EXPECT() *MockUserMockRecorder {
 	return m.recorder
 }
 
+// AssignRole mocks base method.
+func (m *MockUser) AssignRole(ctx context.Context, command commands.AssignRole) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AssignRole", ctx, command)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AssignRole indicates an expected call of AssignRole.
+func (mr *MockUserMockRecorder) AssignRole(ctx, command interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignRole", reflect.TypeOf((*MockUser)(nil).AssignRole), ctx, command)
+}
+
 // ChangePassword mocks base method.
 func (m *MockUser) ChangePassword(ctx context.Context, command commands.ChangePassword) error {
 	m.ctrl.T.Helper()
@@ -63,6 +77,35 @@ func (m *MockUser) GetUser(ctx context.Context, command commands.GetById) (*resu
 func (mr *MockUserMockRecorder) GetUser(ctx, command interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUser", reflect.TypeOf((*MockUser)(nil).GetUser), ctx, command)
+}
+
+// GetUsers mocks base method.
+func (m *MockUser) GetUsers(ctx context.Context, command commands.GetUsers) (*results.GetUsers, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUsers", ctx, command)
+	ret0, _ := ret[0].(*results.GetUsers)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUsers indicates an expected call of GetUsers.
+func (mr *MockUserMockRecorder) GetUsers(ctx, command interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUsers", reflect.TypeOf((*MockUser)(nil).GetUsers), ctx, command)
+}
+
+// RevokeRole mocks base method.
+func (m *MockUser) RevokeRole(ctx context.Context, command commands.RevokeRole) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RevokeRole", ctx, command)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RevokeRole indicates an expected call of RevokeRole.
+func (mr *MockUserMockRecorder) RevokeRole(ctx, command interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RevokeRole", reflect.TypeOf((*MockUser)(nil).RevokeRole), ctx, command)
 }
 
 // UpdateUser mocks base method.

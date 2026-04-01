@@ -37,6 +37,20 @@ func (m *MockUserRepo) EXPECT() *MockUserRepoMockRecorder {
 	return m.recorder
 }
 
+// AddRoleTx mocks base method.
+func (m *MockUserRepo) AddRoleTx(ctx context.Context, tx tx.Tx, command commands.AssignRole) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddRoleTx", ctx, tx, command)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddRoleTx indicates an expected call of AddRoleTx.
+func (mr *MockUserRepoMockRecorder) AddRoleTx(ctx, tx, command interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRoleTx", reflect.TypeOf((*MockUserRepo)(nil).AddRoleTx), ctx, tx, command)
+}
+
 // AddTx mocks base method.
 func (m *MockUserRepo) AddTx(ctx context.Context, tx tx.Tx, command commands.Add) (*results.Add, error) {
 	m.ctrl.T.Helper()
@@ -95,6 +109,35 @@ func (m *MockUserRepo) GetByLoginTx(ctx context.Context, tx tx.Tx, command comma
 func (mr *MockUserRepoMockRecorder) GetByLoginTx(ctx, tx, command interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByLoginTx", reflect.TypeOf((*MockUserRepo)(nil).GetByLoginTx), ctx, tx, command)
+}
+
+// GetUsers mocks base method.
+func (m *MockUserRepo) GetUsers(ctx context.Context, tx tx.Tx, command commands.GetUsers) (*results.GetUsers, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUsers", ctx, tx, command)
+	ret0, _ := ret[0].(*results.GetUsers)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUsers indicates an expected call of GetUsers.
+func (mr *MockUserRepoMockRecorder) GetUsers(ctx, tx, command interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUsers", reflect.TypeOf((*MockUserRepo)(nil).GetUsers), ctx, tx, command)
+}
+
+// RemoveRoleTx mocks base method.
+func (m *MockUserRepo) RemoveRoleTx(ctx context.Context, tx tx.Tx, command commands.RevokeRole) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveRoleTx", ctx, tx, command)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveRoleTx indicates an expected call of RemoveRoleTx.
+func (mr *MockUserRepoMockRecorder) RemoveRoleTx(ctx, tx, command interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveRoleTx", reflect.TypeOf((*MockUserRepo)(nil).RemoveRoleTx), ctx, tx, command)
 }
 
 // UpdatePasswordTx mocks base method.

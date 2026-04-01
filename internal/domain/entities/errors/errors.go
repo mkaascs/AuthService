@@ -11,4 +11,5 @@ var (
 	ErrRefreshTokenAlreadyExists = errors.New("refresh token already exists")
 	ErrInvalidAccessToken        = errors.New("invalid access token")
 	ErrAccessTokenRevoked        = errors.New("access token revoked")
+	ErrRoleNotExist              = errors.New("role does not exist")
 )
