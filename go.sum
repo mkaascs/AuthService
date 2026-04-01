@@ -60,8 +60,8 @@ github.com/klauspost/cpuid/v2 v2.0.9 h1:lgaqFMSdTdQYdZ04uHyN2d/eKdOMyi2YLSvlQIBF
 github.com/klauspost/cpuid/v2 v2.0.9/go.mod h1:FInQzS24/EEf25PyTYn52gqo7WaD8xa0213Md/qVLRg=
 github.com/lib/pq v1.10.9 h1:YXG7RB+JIjhP29X+OtkiDnYaXQwpS4JEWq7dtCCRUEw=
 github.com/lib/pq v1.10.9/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=
-github.com/mkaascs/AuthProto v1.0.6 h1:1Be5O3OjCQwRQlVQtO4yBq1PHeAv7sYywT1fMQB81kQ=
-github.com/mkaascs/AuthProto v1.0.6/go.mod h1:mWcoPmgv9PlX8TDksvjO6vT9lrdlyvTFxWPHpFqZZgI=
+github.com/mkaascs/AuthProto v1.0.8 h1:TnDrL5XjJIXWXDDeN47IsBk1Br0c0LyRk7p9/z1aav8=
+github.com/mkaascs/AuthProto v1.0.8/go.mod h1:mWcoPmgv9PlX8TDksvjO6vT9lrdlyvTFxWPHpFqZZgI=
 github.com/moby/docker-image-spec v1.3.1 h1:jMKff3w6PgbfSa69GfNg+zN/XLhfXJGnEx3Nl2EsFP0=
 github.com/moby/docker-image-spec v1.3.1/go.mod h1:eKmb5VW8vQEh/BAr2yvVNvuiJuY6UIocYsFu/DxxRpo=
 github.com/moby/term v0.5.0 h1:xt8Q1nalod/v7BqbG21f8mQPqH+xAaC9C3N3wfWbVP0=

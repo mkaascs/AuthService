@@ -112,3 +112,30 @@ func ValidateChangePasswordRequest(req *authv1.ChangePasswordRequest) error {
 
 	return nil
 }
+
+func ValidateAssignRoleRequest(req *authv1.AssignRoleRequest) error {
+	if err := validateUserID(req.UserId); err != nil {
+		return err
+	}
+
+	if strings.TrimSpace(req.Role) == "" {
+		return status.Error(codes.InvalidArgument, "login is required")
+	}
+
+	return nil
+}
+
+func ValidateRevokeRoleRequest(req *authv1.RevokeRoleRequest) error {
+	return ValidateAssignRoleRequest(&authv1.AssignRoleRequest{
+		UserId: req.UserId,
+		Role:   req.Role,
+	})
+}
+
+func ValidateGetUsersRequest(req *authv1.GetUsersRequest) error {
+	if req.Limit <= 0 {
+		return status.Error(codes.InvalidArgument, "limit is required and must be more than 0")
+	}
+
+	return nil
+}

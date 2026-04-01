@@ -10,6 +10,22 @@ type GetByLogin struct {
 	Login string
 }
 
+type GetUsers struct {
+	Role  *string
+	Page  int
+	Limit int
+}
+
+type AssignRole struct {
+	UserID int64
+	Role   string
+}
+
+type RevokeRole struct {
+	UserID int64
+	Role   string
+}
+
 type GetById struct {
 	ID int64
 }

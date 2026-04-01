@@ -12,7 +12,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/joho/godotenv v1.5.1
-	github.com/mkaascs/AuthProto v1.0.6
+	github.com/mkaascs/AuthProto v1.0.8
 	github.com/redis/go-redis/v9 v9.18.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.45.0

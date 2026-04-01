@@ -62,7 +62,6 @@ func (s *service) Login(ctx context.Context, command commands.Login) (*results.L
 		return nil, authErrors.ErrInvalidPassword
 	}
 
-	// TODO: bugfix: update deleted refresh token
 	newRefreshToken := refreshToken.Generate()
 	_, err = s.tokenRepo.UpdateByUserIDTx(ctx, tx, tokenCommands.UpdateByUserID{
 		UserID:              result.User.ID,

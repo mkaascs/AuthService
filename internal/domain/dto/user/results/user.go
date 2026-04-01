@@ -13,3 +13,8 @@ type Get struct {
 type Update struct {
 	User entities.User
 }
+
+type GetUsers struct {
+	Users []entities.User
+	Total int
+}
