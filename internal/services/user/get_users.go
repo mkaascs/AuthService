@@ -11,7 +11,7 @@ import (
 )
 
 func (s *service) GetUsers(ctx context.Context, command commands.GetUsers) (*results.GetUsers, error) {
-	const fn = "services.user.service.GetUsers"
+	const fn = "services.user.service.GetUsersTx"
 	log := s.log.With(slog.String("fn", fn))
 
 	tx, err := s.userRepo.BeginTx(ctx)
@@ -26,7 +26,7 @@ func (s *service) GetUsers(ctx context.Context, command commands.GetUsers) (*res
 		}
 	}()
 
-	result, err := s.userRepo.GetUsers(ctx, tx, command)
+	result, err := s.userRepo.GetUsersTx(ctx, tx, command)
 	if err != nil {
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			log.Info("failed to get users", sloglib.Error(err))

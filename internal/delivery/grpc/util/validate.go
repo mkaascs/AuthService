@@ -119,7 +119,7 @@ func ValidateAssignRoleRequest(req *authv1.AssignRoleRequest) error {
 	}
 
 	if strings.TrimSpace(req.Role) == "" {
-		return status.Error(codes.InvalidArgument, "login is required")
+		return status.Error(codes.InvalidArgument, "role is required")
 	}
 
 	return nil
@@ -134,7 +134,11 @@ func ValidateRevokeRoleRequest(req *authv1.RevokeRoleRequest) error {
 
 func ValidateGetUsersRequest(req *authv1.GetUsersRequest) error {
 	if req.Limit <= 0 {
-		return status.Error(codes.InvalidArgument, "limit is required and must be more than 0")
+		return status.Error(codes.InvalidArgument, "limit is required and must be greater than 0")
+	}
+
+	if req.Page <= 0 {
+		return status.Error(codes.InvalidArgument, "page is required and must be greater than 0")
 	}
 
 	return nil

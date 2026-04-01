@@ -29,6 +29,10 @@ func MapError(err error) error {
 		return status.Error(codes.NotFound, "user not found")
 	}
 
+	if errors.Is(err, authErrors.ErrRoleNotExist) {
+		return status.Error(codes.NotFound, "role does not exist")
+	}
+
 	if errors.Is(err, authErrors.ErrInvalidPassword) {
 		return status.Error(codes.Unauthenticated, "invalid password")
 	}
