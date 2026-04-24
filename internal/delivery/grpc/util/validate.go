@@ -30,8 +30,8 @@ func validatePassword(password string) error {
 		return status.Error(codes.InvalidArgument, "password is required")
 	}
 
-	if len(password) < 8 {
-		return status.Error(codes.InvalidArgument, "password must be at least 8 characters")
+	if len(password) < 6 {
+		return status.Error(codes.InvalidArgument, "password must be at least 6 characters")
 	}
 
 	if len(password) > 128 {
