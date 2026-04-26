@@ -20,6 +20,10 @@ type authServer struct {
 	service services.Auth
 }
 
+func RegisterAuthServer(gRPC *grpc.Server, auth services.Auth) {
+	authv1.RegisterAuthServer(gRPC, &authServer{service: auth})
+}
+
 func (as *authServer) Login(ctx context.Context, request *authv1.LoginRequest) (*authv1.LoginResponse, error) {
 	if err := util.ValidateLoginRequest(request); err != nil {
 		return nil, err
@@ -100,8 +104,4 @@ func (as *authServer) Logout(ctx context.Context, request *authv1.LogoutRequest)
 	}
 
 	return &authv1.LogoutResponse{}, nil
-}
-
-func RegisterAuthServer(gRPC *grpc.Server, auth services.Auth) {
-	authv1.RegisterAuthServer(gRPC, &authServer{service: auth})
 }

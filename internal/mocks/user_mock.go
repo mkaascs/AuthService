@@ -82,7 +82,7 @@ func (mr *MockUserMockRecorder) GetUser(ctx, command interface{}) *gomock.Call {
 // GetUsers mocks base method.
 func (m *MockUser) GetUsers(ctx context.Context, command commands.GetUsers) (*results.GetUsers, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUsersTx", ctx, command)
+	ret := m.ctrl.Call(m, "GetUsers", ctx, command)
 	ret0, _ := ret[0].(*results.GetUsers)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -91,7 +91,7 @@ func (m *MockUser) GetUsers(ctx context.Context, command commands.GetUsers) (*re
 // GetUsers indicates an expected call of GetUsers.
 func (mr *MockUserMockRecorder) GetUsers(ctx, command interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUsersTx", reflect.TypeOf((*MockUser)(nil).GetUsers), ctx, command)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUsers", reflect.TypeOf((*MockUser)(nil).GetUsers), ctx, command)
 }
 
 // RevokeRole mocks base method.

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"auth-service/internal/config"
+	"auth-service/internal/domain/interfaces"
 	"auth-service/internal/domain/interfaces/repositories"
 	"auth-service/internal/domain/interfaces/services"
 	"log/slog"
@@ -24,18 +25,20 @@ type service struct {
 	tokenRepo       repositories.RefreshTokenRepo
 	accessTokenRepo repositories.AccessTokenRepo
 	accessTokenSvc  services.AccessToken
+	rateLimiter     interfaces.RateLimiter
 	log             *slog.Logger
 	config          config.AuthConfig
 	hmacSecret      []byte
 }
 
-func New(serviceArgs ServiceArgs, repoArgs RepoArgs, log *slog.Logger) services.Auth {
+func New(serviceArgs ServiceArgs, repoArgs RepoArgs, rateLimiter interfaces.RateLimiter, log *slog.Logger) services.Auth {
 	return &service{
 		userRepo:        repoArgs.UserRepo,
 		tokenRepo:       repoArgs.TokenRepo,
 		accessTokenRepo: repoArgs.AccessTokenRepo,
 		accessTokenSvc:  serviceArgs.AccessTokenSvc,
 		config:          serviceArgs.Config,
+		rateLimiter:     rateLimiter,
 		hmacSecret:      serviceArgs.HmacSecret,
 		log:             log,
 	}

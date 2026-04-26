@@ -111,7 +111,7 @@ func (mr *MockUserRepoMockRecorder) GetByLoginTx(ctx, tx, command interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByLoginTx", reflect.TypeOf((*MockUserRepo)(nil).GetByLoginTx), ctx, tx, command)
 }
 
-// GetUsers mocks base method.
+// GetUsersTx mocks base method.
 func (m *MockUserRepo) GetUsersTx(ctx context.Context, tx tx.Tx, command commands.GetUsers) (*results.GetUsers, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUsersTx", ctx, tx, command)
@@ -120,8 +120,8 @@ func (m *MockUserRepo) GetUsersTx(ctx context.Context, tx tx.Tx, command command
 	return ret0, ret1
 }
 
-// GetUsers indicates an expected call of GetUsers.
-func (mr *MockUserRepoMockRecorder) GetUsers(ctx, tx, command interface{}) *gomock.Call {
+// GetUsersTx indicates an expected call of GetUsersTx.
+func (mr *MockUserRepoMockRecorder) GetUsersTx(ctx, tx, command interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUsersTx", reflect.TypeOf((*MockUserRepo)(nil).GetUsersTx), ctx, tx, command)
 }

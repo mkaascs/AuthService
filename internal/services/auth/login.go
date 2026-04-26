@@ -21,6 +21,14 @@ func (s *service) Login(ctx context.Context, command commands.Login) (*results.L
 	const fn = "services.auth.service.Login"
 	log := s.log.With(slog.String("fn", fn))
 
+	allowed, err := s.rateLimiter.Allow(ctx, command.Login)
+	if err != nil {
+		log.Warn("rate limiter unavailable", sloglib.Error(err))
+	} else if !allowed {
+		log.Info("too many login attempts", slog.String("login", command.Login))
+		return nil, authErrors.ErrTooManyRequests
+	}
+
 	tx, err := s.userRepo.BeginTx(ctx)
 	if err != nil {
 		log.Error("failed to begin tx", sloglib.Error(err))
@@ -96,6 +104,10 @@ func (s *service) Login(ctx context.Context, command commands.Login) (*results.L
 	}
 
 	committed = true
+
+	if err := s.rateLimiter.Reset(ctx, command.Login); err != nil {
+		log.Warn("rate limiter unavailable", sloglib.Error(err))
+	}
 
 	log.Info("user successfully logged in", slog.Int64("user_id", result.User.ID))
 

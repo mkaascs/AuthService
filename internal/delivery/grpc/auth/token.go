@@ -16,9 +16,11 @@ type tokenServer struct {
 	tokens services.Token
 }
 
-func (ts *tokenServer) ValidateToken(ctx context.Context, request *authv1.ValidateTokenRequest) (*authv1.ValidateTokenResponse, error) {
-	// TODO: validate
+func RegisterTokenServer(gRPC *grpc.Server, tokens services.Token) {
+	authv1.RegisterTokenServer(gRPC, &tokenServer{tokens: tokens})
+}
 
+func (ts *tokenServer) ValidateToken(ctx context.Context, request *authv1.ValidateTokenRequest) (*authv1.ValidateTokenResponse, error) {
 	result, err := ts.tokens.ValidateToken(ctx, commands.Validate{
 		AccessToken: request.AccessToken,
 	})
@@ -51,8 +53,4 @@ func (ts *tokenServer) ValidateToken(ctx context.Context, request *authv1.Valida
 		Roles:     result.Roles,
 		ExpiresAt: result.ExpiresAt.Unix(),
 	}, nil
-}
-
-func RegisterTokenServer(gRPC *grpc.Server, tokens services.Token) {
-	authv1.RegisterTokenServer(gRPC, &tokenServer{tokens: tokens})
 }

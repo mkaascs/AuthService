@@ -12,6 +12,7 @@ type AuthMocks struct {
 	AccessTokenRepo *mocks.MockAccessTokenRepo
 	AccessTokenSvc  *mocks.MockAccessToken
 	Tx              *mocks.MockTx
+	RateLimiter     *mocks.MockRateLimiter
 }
 
 func NewAuthMocks(t *testing.T, ctrl *gomock.Controller) *AuthMocks {
@@ -23,5 +24,6 @@ func NewAuthMocks(t *testing.T, ctrl *gomock.Controller) *AuthMocks {
 		AccessTokenRepo: mocks.NewMockAccessTokenRepo(ctrl),
 		AccessTokenSvc:  mocks.NewMockAccessToken(ctrl),
 		Tx:              mocks.NewMockTx(ctrl),
+		RateLimiter:     mocks.NewMockRateLimiter(ctrl),
 	}
 }

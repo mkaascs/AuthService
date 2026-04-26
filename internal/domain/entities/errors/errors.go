@@ -12,4 +12,5 @@ var (
 	ErrInvalidAccessToken        = errors.New("invalid access token")
 	ErrAccessTokenRevoked        = errors.New("access token revoked")
 	ErrRoleNotExist              = errors.New("role does not exist")
+	ErrTooManyRequests           = errors.New("too many requests")
 )

@@ -16,6 +16,10 @@ type userServer struct {
 	users services.User
 }
 
+func RegisterUserServer(gRPC *grpc.Server, users services.User) {
+	authv1.RegisterUserServer(gRPC, &userServer{users: users})
+}
+
 func (us *userServer) GetUser(ctx context.Context, request *authv1.GetUserRequest) (*authv1.GetUserResponse, error) {
 	if err := util.ValidateUserID(request.UserId); err != nil {
 		return nil, err
@@ -125,10 +129,6 @@ func (us *userServer) RevokeRole(ctx context.Context, request *authv1.RevokeRole
 	}
 
 	return &authv1.RevokeRoleResponse{}, nil
-}
-
-func RegisterUserServer(gRPC *grpc.Server, users services.User) {
-	authv1.RegisterUserServer(gRPC, &userServer{users: users})
 }
 
 func usersDomainToPbModels(users []entities.User) []*authv1.UserInfo {
