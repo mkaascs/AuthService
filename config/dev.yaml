@@ -1,5 +1,5 @@
 env: "dev"
-db_host: "mysql:3306"
+db_host: "mysql-auth:3306"
 grpc:
   port: 5505
   timeout: 5s
