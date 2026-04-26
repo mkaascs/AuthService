@@ -19,6 +19,7 @@ type Config struct {
 	GrpcConfig         `yaml:"grpc"`
 	AuthConfig         `yaml:"auth"`
 	RedisConfig        `yaml:"redis"`
+	RateLimiterConfig  `yaml:"rate_limiter"`
 }
 
 type GrpcConfig struct {
@@ -39,6 +40,12 @@ type RedisConfig struct {
 	MaxRetries  int           `yaml:"max_retries" env-default:"5"`
 	DialTimeout time.Duration `yaml:"dial_timeout" env-default:"10s"`
 	Timeout     time.Duration `yaml:"timeout" env-default:"5s"`
+}
+
+type RateLimiterConfig struct {
+	MaxAttempts   int           `yaml:"max_attempts" env-default:"5"`
+	Window        time.Duration `yaml:"window" env-default:"10m"`
+	BlockDuration time.Duration `yaml:"block_duration" env-default:"5m"`
 }
 
 func MustLoad() *Config {

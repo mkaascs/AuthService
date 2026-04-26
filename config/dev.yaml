@@ -13,3 +13,7 @@ redis:
   dial_timeout: 10s
   timeout: 5s
   max_retries: 1
+rate_limiter:
+  max_attempts: 4
+  window: 10m
+  block_duration: 5m
