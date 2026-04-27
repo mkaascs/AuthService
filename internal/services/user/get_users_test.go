@@ -33,7 +33,7 @@ func TestService_GetUsers(t *testing.T) {
 		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 		mockTx.EXPECT().Rollback().Return(nil)
 
-		mockUserRepo.EXPECT().GetUsers(gomock.Any(), mockTx, gomock.Any()).
+		mockUserRepo.EXPECT().GetUsersTx(gomock.Any(), mockTx, gomock.Any()).
 			DoAndReturn(func(ctx context.Context, tx interface{}, command commands.GetUsers) (*results.GetUsers, error) {
 				require.Nil(t, command.Role)
 				require.Equal(t, 1, command.Page)
@@ -67,7 +67,7 @@ func TestService_GetUsers(t *testing.T) {
 		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 		mockTx.EXPECT().Rollback().Return(nil)
 
-		mockUserRepo.EXPECT().GetUsers(gomock.Any(), mockTx, gomock.Any()).
+		mockUserRepo.EXPECT().GetUsersTx(gomock.Any(), mockTx, gomock.Any()).
 			DoAndReturn(func(ctx context.Context, tx interface{}, command commands.GetUsers) (*results.GetUsers, error) {
 				require.NotNil(t, command.Role)
 				require.Equal(t, "hr", *command.Role)
@@ -96,7 +96,7 @@ func TestService_GetUsers(t *testing.T) {
 
 		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 		mockTx.EXPECT().Rollback().Return(nil)
-		mockUserRepo.EXPECT().GetUsers(gomock.Any(), mockTx, gomock.Any()).
+		mockUserRepo.EXPECT().GetUsersTx(gomock.Any(), mockTx, gomock.Any()).
 			Return(&results.GetUsers{Users: []entities.User{}, Total: 0}, nil)
 
 		result, err := svc.GetUsers(context.Background(), commands.GetUsers{
@@ -120,7 +120,7 @@ func TestService_GetUsers(t *testing.T) {
 		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 		mockTx.EXPECT().Rollback().Return(nil)
 
-		mockUserRepo.EXPECT().GetUsers(gomock.Any(), mockTx, gomock.Any()).
+		mockUserRepo.EXPECT().GetUsersTx(gomock.Any(), mockTx, gomock.Any()).
 			DoAndReturn(func(ctx context.Context, tx interface{}, command commands.GetUsers) (*results.GetUsers, error) {
 				require.Equal(t, 2, command.Page)
 				require.Equal(t, 5, command.Limit)
@@ -152,7 +152,7 @@ func TestService_GetUsers(t *testing.T) {
 
 		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 		mockTx.EXPECT().Rollback().Return(nil)
-		mockUserRepo.EXPECT().GetUsers(gomock.Any(), mockTx, gomock.Any()).
+		mockUserRepo.EXPECT().GetUsersTx(gomock.Any(), mockTx, gomock.Any()).
 			Return(nil, context.Canceled)
 
 		result, err := svc.GetUsers(ctx, commands.GetUsers{Page: 1, Limit: 10})
@@ -170,7 +170,7 @@ func TestService_GetUsers(t *testing.T) {
 
 		mockUserRepo.EXPECT().BeginTx(gomock.Any()).Return(mockTx, nil)
 		mockTx.EXPECT().Rollback().Return(nil)
-		mockUserRepo.EXPECT().GetUsers(gomock.Any(), mockTx, gomock.Any()).
+		mockUserRepo.EXPECT().GetUsersTx(gomock.Any(), mockTx, gomock.Any()).
 			Return(nil, errors.New("internal error"))
 
 		result, err := svc.GetUsers(context.Background(), commands.GetUsers{Page: 1, Limit: 10})
