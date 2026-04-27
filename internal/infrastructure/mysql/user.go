@@ -297,6 +297,10 @@ func (ur *UserRepo) AddRoleTx(ctx context.Context, tx tx.Tx, command commands.As
 			return nil
 		}
 
+		if isForeignKeyErr(err) {
+			return authErrors.ErrUserNotFound
+		}
+
 		return fmt.Errorf("%s: failed to insert user role: %w", fn, err)
 	}
 
@@ -403,4 +407,8 @@ func (ur *UserRepo) handleStmtClose(stmt *sql.Stmt, fn string) {
 
 func isDuplicateErr(err error) bool {
 	return strings.Contains(err.Error(), "1062")
+}
+
+func isForeignKeyErr(err error) bool {
+	return strings.Contains(err.Error(), "1452")
 }
