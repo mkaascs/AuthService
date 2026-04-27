@@ -25,6 +25,10 @@ func MapError(err error) error {
 		return status.Error(codes.Unauthenticated, "invalid access token")
 	}
 
+	if errors.Is(err, authErrors.ErrTooManyRequests) {
+		return status.Error(codes.ResourceExhausted, "too many requests, try later")
+	}
+
 	if errors.Is(err, authErrors.ErrUserNotFound) {
 		return status.Error(codes.NotFound, "user not found")
 	}

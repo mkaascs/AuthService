@@ -73,6 +73,8 @@ func (a *App) MustRegisterHandlers() {
 	tokenRepo := repo.NewRefreshTokenRepo(a.MySql.DB, a.logger)
 	accessTokenRepo := redisRepo.NewAccessTokenRepo(a.Redis.Client)
 
+	rateLimiter := redisRepo.NewRateLimiter(a.Redis.Client, a.config.RateLimiterConfig)
+
 	authService := auth.New(auth.ServiceArgs{
 		AccessTokenSvc: jwtService,
 		Config:         a.config.AuthConfig,
@@ -81,7 +83,7 @@ func (a *App) MustRegisterHandlers() {
 		UserRepo:        userRepo,
 		TokenRepo:       tokenRepo,
 		AccessTokenRepo: accessTokenRepo,
-	}, a.logger)
+	}, rateLimiter, a.logger)
 
 	userService := user.New(userRepo, a.logger)
 	tokenService := token.New(jwtService, accessTokenRepo, a.logger)
